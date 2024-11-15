@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.study.mapper.FileMapper">
+    <insert id="createFile" parameterType="com.study.dto.FileDTO" useGeneratedKeys="true" keyProperty="fileId">
+        INSERT INTO tb_file (board_id, original_name, physical_name, file_path, extension, size, created_at)
+        VALUES (#{boardId}, #{originalName}, #{physicalName}, #{filePath}, #{extension}, #{size}, current_timestamp)
+    </insert>
+    
+    <select id="findByBoardId" parameterType="Long" resultType="com.study.dto.FileDTO">
+        SELECT *
+        FROM tb_file
+        WHERE board_id = #{boardId}
+    </select>
+    
+    <select id="findByFileId" parameterType="Long" resultType="com.study.dto.FileDTO">
+        SELECT *
+        FROM tb_file
+        WHERE file_id = #{fileId}
+    </select>
+
+    <delete id="deleteByBoardId" parameterType="Long">
+        DELETE FROM tb_file
+        WHERE board_id = #{boardId}
+    </delete>
+
+    <delete id="deleteById" parameterType="Long">
+        DELETE FROM tb_file
+        WHERE file_id = #{fileId}
+    </delete>
+
+</mapper>

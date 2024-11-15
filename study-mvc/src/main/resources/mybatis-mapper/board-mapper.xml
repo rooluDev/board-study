@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.study.mapper.BoardMapper">
+    <select id="getBoardList" parameterType="com.study.condition.BoardSelectCondition" resultType="com.study.dto.BoardDTO">
+        SELECT *
+        FROM tb_board
+        WHERE created_at BETWEEN #{startDate} AND #{endDate}
+        <if test="searchText != null and searchText != ''">
+            AND (title LIKE CONCAT('%',#{searchText},'%')
+                     OR user_name LIKE CONCAT('%',#{searchText},'%')
+                     OR content LIKE CONCAT('%',#{searchText},'%')
+                )
+        </if>
+        <if test="categoryId > 0">
+            AND category_id = #{categoryId}
+        </if>
+        ORDER BY created_at DESC LIMIT #{pageSize} OFFSET #{startRow}
+    </select>
+
+    <select id="getBoardCount" parameterType="com.study.condition.BoardSelectCondition" resultType="Integer">
+        SELECT (
+        SELECT COUNT(*)
+        FROM tb_board
+        WHERE created_at BETWEEN #{startDate} AND #{endDate}
+        <if test="searchText != null and searchText != ''">
+            AND (title LIKE CONCAT('%',#{searchText},'%')
+            OR user_name LIKE CONCAT('%',#{searchText},'%')
+            OR content LIKE CONCAT('%',#{searchText},'%')
+            )
+        </if>
+        <if test="categoryId > 0">
+            AND category_id = #{categoryId}
+        </if>
+        ) AS row_count
+    </select>
+
+    <select id="findById" parameterType="Long" resultType="com.study.dto.BoardDTO">
+        SELECT *
+        FROM tb_board
+        WHERE board_id = #{boardId}
+    </select>
+
+    <insert id="createBoard" parameterType="com.study.dto.BoardDTO" useGeneratedKeys="true" keyProperty="boardId">
+        INSERT INTO tb_board (category_id, title, content, user_name, password, created_at)
+        VALUES (#{categoryId}, #{title}, #{content}, #{userName}, #{password}, current_timestamp)
+    </insert>
+
+    <select id="selectPassword" parameterType="Long" resultType="String">
+        SELECT password
+        FROM tb_board
+        WHERE board_id = #{boardId}
+    </select>
+
+    <update id="updateBoard" parameterType="com.study.dto.BoardDTO">
+        UPDATE tb_board
+        SET title = #{title}, user_name = #{userName}, content = #{content}, edited_at = current_timestamp
+        WHERE board_id = #{boardId}
+    </update>
+
+    <update id="updateView" parameterType="Long">
+        UPDATE tb_board
+        SET views = views + 1
+        WHERE board_id = #{boardId}
+    </update>
+
+    <delete id="deleteById" parameterType="Long">
+        DELETE FROM tb_board
+        WHERE board_id = #{boardId}
+    </delete>
+</mapper>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+</head>
+<body>
+    <h1>게시판 - 수정</h1>
+    <h2>기본 정보</h2>
+    <p>카테고리</p>
+    <span th:text="${categoryName}"></span>
+    <br/>
+
+    <p>등록 일시</p>
+    <span th:text="${board.createdAt}"></span>
+    <br/>
+
+    <p>수정 일시</p>
+    <span th:if="${board.editedAt != null}" th:text="${#dates.format(board.editedAt, 'yyyy.MM.dd hh:mm')}"></span>
+    <span th:unless="${board.editedAt != null}">-</span>
+    <br/>
+
+    <p>조회수</p>
+    <span th:text="${board.views}"></span>
+    <br/>
+
+    <form method="post" action="/board/update" id="modifyForm">
+        <span>작성자</span>
+        <input type="text" th:value="${board.userName}" name="userName" minlength="3" maxlength="4"  required>
+        <br/>
+
+        <span>비밀번호</span>
+        <input type="password" name="password" id="password" minlength="4" maxlength="15" required>
+        <br/>
+
+        <span>제목</span>
+        <input type="text" th:value="${board.title}" name="title" minlength="4" maxlength="99" required>
+        <br/>
+
+        <span>내용</span>
+        <input type="text" th:value="${board.content}" name="content" minlength="4" maxlength="1999">
+        <br/>
+
+        <span>파일 첨부</span>
+        <div th:each="file : ${fileList}" class="file-info">
+            <span th:text="${file.originalName}"></span>
+            <button type="button" class="deleteFileBtn" th:data-id="${file.fileId}">X</button>
+        </div>
+        <input type="hidden" id="deleteFileIdList" name="deleteFileIds">
+
+        <br/>
+        <input type="hidden" id="boardId" th:value="${boardId}" name="boardId">
+        <input type="hidden" th:value="${pageNum}" name="pageNum">
+        <button id="modifyBtn">저장</button>
+    </form>
+    <button th:onclick="|location.href='@{/boards/free/view/{boardId}(boardId = ${board.boardId},pageNum=${pageNum})}'|">취소</button>
+
+</body>
+<script th:inline="javascript">
+    let deleteFileId = [];
+
+    $(document).ready(function() {
+        $(".deleteFileBtn").click(function() {
+            $(this).closest('.file-info').remove();
+            deleteFileId.push($(this).data("id"));
+        });
+    });
+
+    let passwordObj = {
+        password : '',
+        boardId : $("#boardId").val()
+    }
+    $(document).ready(function (){
+        $("#modifyBtn").click(function (e){
+            e.preventDefault();
+            passwordObj.password = $("#password").val();
+            $.ajax({
+                type : "POST",
+                url : "/board/passwordConfirm/ajax",
+                contentType:"application/json",
+                data: JSON.stringify(passwordObj),
+                success: function (response){
+                    if (response === "success"){
+                        $("#deleteFileIdList").val(deleteFileId);
+                        $("#modifyForm").submit();
+                    }
+                },
+                error:function (){
+                    alert("Password is incorrect!");
+                }
+            })
+        });
+
+    })
+</script>
+</html>

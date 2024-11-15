@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+</head>
+<body>
+    <h1>게시판 - 보기</h1>
+    <p>등록자</p>
+    <span th:text="${board.userName}"></span>
+    <br/>
+
+    <p>등록일시</p>
+    <span th:text="${board.createdAt}"></span>
+    <br/>
+
+    <p>수정일시</p>
+    <span th:if="${board.editedAt != null}" th:text="${#dates.format(board.editedAt, 'yyyy.MM.dd hh:mm')}"></span>
+    <span th:unless="${board.editedAt != null}">-</span>
+    <br/>
+
+    <p>조회수</p>
+    <span th:text="${board.views}"></span>
+    <br/>
+
+    <p>카테고리</p>
+    <span th:text="${categoryName}"></span>
+    <br/>
+
+    <p>제목</p>
+    <span th:text="${board.title}"></span>
+    <br/>
+
+    <p>내용</p>
+    <span th:text="${board.content}"></span>
+    <br/>
+
+    <p>첨부파일</p>
+    <a th:each="file : ${fileList}" th:href="@{/file/download/{fileId}(fileId=${file.fileId})}" th:text="${file.originalName}"></a>
+
+    <p>댓글</p>
+    <div th:if="commentList != null" th:each="comment : ${commentList}">
+        <span th:text="${#dates.format(comment.createdAt,'yyyy.MM.dd hh:mm')}"></span>
+        <br/>
+        <span th:text="${comment.comment}"></span>
+        <br/>
+        <span>----------------------</span>
+    </div>
+    <form method="post" action="/comment/add">
+        <input type="text" name="comment" placeholder="댓글을 입력해 주세요.">
+        <input id="boardId" type="hidden" name="boardId" th:value="${board.boardId}">
+        <input id="pageNum"type="hidden" name="pageNum" th:value="${pageNum}">
+        <input type="submit">
+    </form>
+    <br/>
+    <button th:onclick="|location.href='@{/boards/free/list(pageNum=${pageNum})}'|">목록</button>
+    <button th:onclick="|location.href='@{/board/free/modify/{boardId}(boardId=${board.boardId},pageNum=${pageNum})}'|">수정</button>
+    <button id="verifyPasswordBtn">삭제</button>
+
+
+    <div id="passwordVerificationModal" style="display: none;">
+        <label for="passwordInput">Enter Password:</label>
+        <input type="password" id="passwordInput">
+        <button id="confirmPasswordBtn">Confirm</button>
+        <button id="closeModalBtn">Close</button>
+    </div>
+
+</body>
+<script th:inline="javascript">
+    const deleteBoard = (boardId,pageNum) =>{
+        // TODO : error
+        location.href = "/board/delete/" + boardId + "?pageNum=" + pageNum;
+    }
+
+    let sendObj = {
+        boardId : $("#boardId").val(),
+        password: ''
+    };
+
+    $(document).ready(function (){
+        $("#verifyPasswordBtn").click(function (){
+            $("#passwordVerificationModal").show();
+        });
+
+        $(document).ready(function () {
+            $("#confirmPasswordBtn").click(function () {
+                sendObj.password = $("#passwordInput").val();
+                // AJAX 요청
+                $.ajax({
+                    type: "POST",
+                    url: "/board/passwordConfirm/ajax",
+                    contentType: "application/json",
+                    data: JSON.stringify(sendObj),
+                    success: function (response) {
+                        if (response === "success") {
+                            deleteBoard(sendObj.boardId, $("#pageNum").val());
+                        }
+                    },
+                    error: function () {
+                        alert("Password is incorrect!");
+                    }
+                });
+            });
+        });
+
+        // 모달 창 닫기 버튼
+        $("#closeModalBtn").click(function() {
+            $("#passwordVerificationModal").hide();
+        });
+    })
+</script>
+</html>

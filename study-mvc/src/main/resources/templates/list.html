@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h1>자유 게시판 - 목록</h1>
+<form action="/boards/free/list" method="get">
+    <input type="date" name="startDate"
+           th:value="${searchForm.startDate}"/>
+    <input type="date" name="endDate"
+           th:value="${searchForm.endDate}"/>
+    <select name="categoryId" th:field="*{searchForm.categoryId}">
+        <option value="-1" th:selected="${searchForm.categoryId == -1}">전체 카테고리</option>
+        <option th:each="category : ${categoryList}"
+                th:value="${category.categoryId}"
+                th:selected="${searchForm.categoryId == category.categoryId}"
+                th:text="${category.categoryName}">
+        </option>
+    </select>
+    <input type="text" name="searchText" placeholder="검색어를 입력해 주세요." th:value="${searchForm.searchText}"/>
+    <input type="submit" value="검색">
+</form>
+<h2 th:text="'총 게시물 수 : '+ ${totalBoardCount}"></h2>
+<table>
+    <thead>
+    <th>카테고리</th>
+    <th>제목</th>
+    <th>작성자</th>
+    <th>조회수</th>
+    <th>등록일시</th>
+    <th>수정일시</th>
+    </thead>
+    <tbody>
+    <tr th:each="board : ${boardList}">
+<!--        TODO : error-->
+        <td th:text="${@categoryService.findCategoryName(board.categoryId)}"></td>
+        <td th:if="${@fileService.findFiles(board.boardId).size() != 0}">O</td>
+
+        <td><a th:href="@{ /boards/free/view/{seq}(seq = ${board.boardId}, pageNum=${pageNum})}" th:if="${board.title.length() < 20}" th:text="${board.title}"></a></td>
+        <td><a th:href="@{ /boards/free/view/{seq}(seq = ${board.boardId}, pageNum=${pageNum})}" th:unless="${board.title.length() < 20}" th:text="${board.title.substring(0,20)}+'...'"></a></td>
+        <td th:text="${board.userName}"></td>
+        <td th:text="${board.views}"></td>
+        <td th:text="${#dates.format(board.createdAt, 'yyyy.MM.dd hh:mm')}"></td>
+        <td th:if="${board.editedAt != null}" th:text="${#dates.format(board.editedAt, 'yyyy.MM.dd hh:mm')}"></td>
+        <td th:unless="${board.editedAt != null}">-</td>
+    </tr>
+    </tbody>
+</table>
+<span th:if="${totalPageNum != 0}" th:each="pageNum : ${#numbers.sequence(1, totalPageNum)}">
+    <a th:object="${searchForm}"
+       th:href="@{/boards/free/list(startDate=${searchForm.startDate},endDate=${searchForm.endDate},categoryId=${searchForm.categoryId},
+       searchText=${searchForm.searchText},pageNum=${pageNum})}"
+       th:text="${pageNum}"></a>
+</span>
+<br/>
+<button>
+    <a href="/board/free/write">글쓰기<a/>
+</button>
+</body>
+</html>
