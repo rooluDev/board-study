@@ -1,22 +1,17 @@
-<%@ page import="com.study.repository.BoardRepository" %><%--
-  Created by IntelliJ IDEA.
-  User: user
-  Date: 1/19/24
-  Time: 4:20 AM
-  To change this template use File | Settings | File Templates.
---%>
+<%@ page import="com.study.service.BoardService" %>
+<%@ page import="com.study.service.CommentService" %>
+<%@ page import="com.study.service.FileService" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%
     int boardId = Integer.parseInt(request.getParameter("boardId"));
-    BoardRepository boardRepository = new BoardRepository();
-    boardRepository.deleteById(boardId);
+
+    BoardService boardService = new BoardService();
+    CommentService commentService = new CommentService();
+    FileService fileService = new FileService();
+
+    commentService.deleteCommentsByBoardId(boardId);
+    fileService.deleteByBoardId(boardId);
+    boardService.deleteBoardById(boardId);
+
     response.sendRedirect("list.jsp");
 %>
-<html>
-<head>
-    <title>Title</title>
-</head>
-<body>
-
-</body>
-</html>
