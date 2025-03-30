@@ -1,122 +1,123 @@
-<%--
-  Created by IntelliJ IDEA.
-  User: user
-  Date: 1/15/24
-  Time: 4:30 PM
-  To change this template use File | Settings | File Templates.
---%>
+<%@ page import="com.study.service.CategoryService" %>
+<%@ page import="java.util.List" %>
+<%@ page import="com.study.dto.Category" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%
+    CategoryService categoryService = new CategoryService();
+    List<Category> categoryList = categoryService.getCategoryList();
+    String startDate = request.getParameter("startDate");
+    String endDate = request.getParameter("endDate");
+    String categoryId = request.getParameter("categoryId");
+    String searchText = request.getParameter("searchText");
+    String pageNum = request.getParameter("pageNum");
+%>
 <html>
 <head>
-    <title>Title</title>
+    <title>Posting</title>
 </head>
 <body>
-  <h1>게시판 - 등록</h1>
-  <form action="saveData.jsp" method="post" onsubmit="return validateForm()">
-      <label for="category">카테고리</label>
-      <select name="category" id="category" required>
-          <option value="none">카테고리 선택</option>
-          <option value="JAVA">JAVA</option>
-          <option value="Javascript">Javascript</option>
-          <option value="Database">Database</option>
-      </select>
-      <br/>
-      <label for="user_name">작성자</label>
-      <input type="text" id="user_name" name="user_name" required>
-      <br/>
-      <label for="password">비밀번호</label>
-      <input type="password" id="password" name="password" placeholder="비밀번호" required>
-      <input type="password" id="passwordRe" name="passwordRe" placeholder="비밀번호 확인" required>
-      <br/>
-      <label for="title">제목</label>
-      <input type="text" id="title" name="title" required>
-      <br/>
-      <label for="content">내용</label>
-      <input type="text" id="content" name="content" required>
-      <br/>
-      <label for="file">파일 첨부</label>
-      <div id="file">
-          <input type="file" name="file1">
-          <input type="file" name="file2">
-          <input type="file" name="file3">
-      </div>
-      <br/>
-      <button type="button" onclick="goToList()">취소</button>
-      <button type="submit">저장</button>
-  </form>
+<h1>게시판 - 등록</h1>
+<form action="postingProc.jsp" method="post" onsubmit="return validateForm()" enctype="multipart/form-data">
+    <label for="categoryId">카테고리</label>
+    <select name="categoryId" id="categoryId">
+        <option value="-1">전체 카테고리</option>
+        <%
+            for (Category category : categoryList) {
+                out.println("<option value=" + category.getCategoryId() + ">" + category.getCategoryName() + "</option>");
+            }
+        %>
+    </select>
+    <br/>
+    <label for="userName">작성자</label>
+    <input type="text" name="userName" id="userName" required>
+    <br/>
+    <label for="password">비밀번호</label>
+    <input type="password" id="password" name="password" placeholder="비밀번호" required>
+    <input type="password" id="passwordRe" name="passwordRe" placeholder="비밀번호 확인" required>
+    <br/>
+    <label for="title">제목</label>
+    <input type="text" name="title" id="title" required>
+    <br/>
+    <label for="content">내용</label>
+    <input type="text" id="content" name="content" required>
+    <br/>
+    <label for="file">파일 첨부</label>
+    <div id="file">
+        <input type="file" name="file">
+        <input type="file" name="file">
+        <input type="file" name="file">
+    </div>
+    <br/>
+    <button type="button" onclick="goToList()">취소</button>
+    <button type="submit">저장</button>
+</form>
 <script>
-    function goToList(){
+    function goToList() {
         const listPage = "list.jsp";
-        location.href = listPage;
+        location.href = listPage + "?pageNum=<%=pageNum%>&startDate=<%=startDate%>&endDate=<%=endDate%>&categoryId=<%=categoryId%>&searchText=<%=searchText%>";
     }
-    function validateForm(){
-        if (!validateCategory()){
+
+    function validateForm() {
+        const isValid = validateCategory() && validatePassword() && validateUserName() && validateTitle() && validateContent();
+        return isValid;
+    }
+
+    function validateCategory() {
+        const categoryId = document.getElementById("categoryId").value;
+
+        if (categoryId === -1) {
             alert("카테고리를 선택하세요.");
-            return false;
-        }
-        if (!validateUserName()){
-            alert("작성자를 3글자 이상, 5글자 미만으로 입력하세요.");
-            return false;
-        }
-        if (!validatePassword()){
-            alert("비밀번호를 4글자 이상, 16글자 미만, 영문/숫자/특수문자를 포함하세요.");
-            return false;
-        }
-        if (!validatePasswordMatch()){
-            alert("비밀번호가 일치하지 않습니다.");
-            return false;
-        }
-        if (!validateTitle()) {
-            alert("제목을 4글자 이상, 100글자 미만으로 입력하세요.");
-            return false;
-        }
-        if (!validateContent()) {
-            alert("내용을 4글자 이상, 2000글자 미만으로 입력하세요.");
             return false;
         }
         return true;
     }
 
-    function validateCategory(){
-        const category = document.getElementById("category").value;
-        if (category == "none") {
+    function validateUserName() {
+        const userName = document.getElementById("userName").value;
+        if (userName.length < 3 || userName.length > 4) {
+            alert("작성자를 3글자 이상, 5글자 미만으로 입력하세요.");
             return false;
         }
         return true;
     }
-    function validateUserName(){
-        const userName = document.getElementById("user_name").value;
-        if (userName.length >= 3 && userName.length <5){
-            return true;
-        }
-        return false;
-    }
-    function validatePassword(){
+
+    function validatePassword() {
         const password = document.getElementById("password").value;
+
         const regex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{4,16}$/;
-        return regex.test(password);
+        if (!regex.test(password)){
+            alert("비밀번호를 4글자 이상, 16글자 미만, 영문/숫자/특수문자를 포함하세요.");
+            return false;
+        }
+        return true;
     }
-    function validatePasswordMatch(){
+
+    function validatePasswordMatch() {
         const password = document.getElementById("password").value;
         const passwordRe = document.getElementById("passwordRe").value;
-        if (password == passwordRe){
-            return true;
+        if (password !== passwordRe) {
+            alert("비밀번호가 일치하지 않습니다.");
+            return false;
         }
-        return false;
+        return true;
     }
-    function validateTitle(){
+
+    function validateTitle() {
         const title = document.getElementById("title").value;
-        if (title.length >= 4 && title.length < 100) {
-            return true;
+        if (title.length < 4 || title.length > 100) {
+            alert("제목을 4글자 이상, 100글자 미만으로 입력하세요.");
+            return false;
         }
-        return false;
+        return true;
     }
-    function validateContent(){
+
+    function validateContent() {
         const content = document.getElementById("content").value;
-        if (content.length >= 4 && content.length <= 2000) {
-            return true;
+        if (content.length < 4 || content.length > 2000) {
+            alert("내용을 4글자 이상, 2000글자 미만으로 입력하세요.");
+            return false;
         }
-        return false;
+        return true;
     }
 </script>
 </body>
