@@ -8,8 +8,8 @@ import java.sql.*;
 public class JDBCConnection {
 
     static final String DB_URL = "jdbc:mysql://localhost:3306/board-study";
-    static final String USER = "root";
-    static final String PASS = "asd@1252370";
+    static final String USER = ;
+    static final String PASS = ;
 
     public Connection getConnection() throws Exception {
 
