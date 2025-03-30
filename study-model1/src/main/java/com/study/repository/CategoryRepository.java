@@ -1,61 +1,54 @@
 package com.study.repository;
 
 import com.study.connection.JDBCConnection;
+import com.study.dto.Category;
+import lombok.Getter;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * 이 클래스는 어쩌구
+ * 카테고리 DB 레포
  */
 public class CategoryRepository {
 
-    /**
-     * 이 메서드는 어쩌구
-     * @param boardId - 보드 식별자
-     * @param category - 카테고리 아이디
-     * @throws Exception
-     */
-    public void insertCategory(int boardId, String category) throws Exception {
+    @Getter
+    private static final CategoryRepository instance = new CategoryRepository();
 
-        /*
-         *
-         */
-        JDBCConnection jdbcConnection = new JDBCConnection();
-        Connection connection = jdbcConnection.getConnection();
-        PreparedStatement pstmt = null;
-
-        String sql = "INSERT INTO tb_category (board_id, category_name) VALUES(?,?)";
-        pstmt = connection.prepareStatement(sql);
-
-        pstmt.setInt(1, boardId);
-        pstmt.setString(2, category);
-        pstmt.executeUpdate();
-        connection.close();
-    }
+    private CategoryRepository(){}
 
     /**
+     * 카테고리 리스트 가져오기
      *
-     * @param boardId
-     * @return
+     * @return 카테고리 리스트
      * @throws Exception
      */
-    public String findByBoardId(int boardId) throws Exception {
+    public List<Category> getCategoryList() throws Exception{
         JDBCConnection jdbcConnection = new JDBCConnection();
         Connection connection = jdbcConnection.getConnection();
         PreparedStatement pstmt = null;
         ResultSet resultSet = null;
-        String categoryName = null;
 
-        String sql = "SELECT category_name from tb_category WHERE board_id = ?";
+        List<Category> categoryList = new ArrayList<>();
+
+        String sql = "SELECT * FROM tb_category";
         pstmt = connection.prepareStatement(sql);
-        pstmt.setInt(1, boardId);
         resultSet = pstmt.executeQuery();
+
         while (resultSet.next()) {
-            categoryName = resultSet.getString("category_name");
+            Category category = Category.builder()
+                    .categoryId(resultSet.getInt("category_id"))
+                    .categoryName(resultSet.getString("category_name"))
+                    .build();
+
+            categoryList.add(category);
         }
-        connection.close();
-        return categoryName;
+
+        jdbcConnection.closeConnections(connection, pstmt, resultSet);
+
+        return categoryList;
     }
 }
