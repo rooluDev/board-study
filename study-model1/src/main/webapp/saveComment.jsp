@@ -1,27 +1,24 @@
-<%@ page import="com.study.repository.CommentRepository" %>
-<%@ page import="java.util.List" %>
-<%@ page import="com.study.domain.Comment" %><%--
-  Created by IntelliJ IDEA.
-  User: user
-  Date: 1/20/24
-  Time: 3:02 AM
-  To change this template use File | Settings | File Templates.
---%>
+<%@ page import="com.study.service.CommentService" %>
+<%@ page import="com.study.dto.Comment" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 
 <%
     String comment = request.getParameter("comment");
+    String startDate = request.getParameter("startDate");
+    String endDate = request.getParameter("endDate");
+    String categoryId = request.getParameter("categoryId");
+    String searchText = request.getParameter("searchText");
     int boardId = Integer.parseInt(request.getParameter("boardId"));
     int pageNum = Integer.parseInt(request.getParameter("pageNum"));
-    CommentRepository commentRepository = new CommentRepository();
-    int commentId = commentRepository.insertBoard(comment,boardId);
-    response.sendRedirect("board.jsp?boardId=" + boardId + "&pageNum=" + pageNum);
-%>
-<html>
-<head>
-    <title>Title</title>
-</head>
-<body>
 
-</body>
-</html>
+    CommentService commentService = new CommentService();
+
+    Comment addedComment = Comment.builder()
+            .boardId(boardId)
+            .comment(comment)
+            .build();
+
+    commentService.addComment(addedComment);
+
+    response.sendRedirect("board.jsp?boardId=" + boardId + "&startDate=" + startDate + "&endDate=" + endDate + "&categoryId=" + categoryId + "&searchText=" + searchText + "&pageNum=" + pageNum);
+%>
