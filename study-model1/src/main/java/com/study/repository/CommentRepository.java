@@ -1,57 +1,99 @@
 package com.study.repository;
 
 import com.study.connection.JDBCConnection;
-import com.study.domain.Comment;
+import com.study.dto.Comment;
+import lombok.Getter;
 
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
+/**
+ * 댓글 DB 레포
+ */
 public class CommentRepository {
-    public List<Comment> commentList(int boardId) throws Exception{
+
+    @Getter
+    public static final CommentRepository instance = new CommentRepository();
+
+    private CommentRepository() {
+    }
+
+    /**
+     * 게시물에 있는 댓글 리스트 DB SELECT
+     *
+     * @param boardId 게시물 PK
+     * @return 댓글 리스트
+     * @throws Exception
+     */
+    public List<Comment> selectCommentListByBoardId(int boardId) throws Exception {
         JDBCConnection jdbcConnection = new JDBCConnection();
         Connection connection = jdbcConnection.getConnection();
         PreparedStatement pstmt = null;
         ResultSet resultSet = null;
         List<Comment> commentList = new ArrayList<>();
-        String sql = "select * from tb_comment where board_id = ? order by created_at asc";
+        int idx = 1;
+
+        String sql = "SELECT * FROM tb_comment WHERE board_id = ? ORDER BY created_at ASC";
+
         pstmt = connection.prepareStatement(sql);
-        pstmt.setInt(1, boardId);
+        pstmt.setInt(idx++, boardId);
         resultSet = pstmt.executeQuery();
+
         while (resultSet.next()) {
-            Comment comment = new Comment();
-            comment.setBoardId(resultSet.getInt("board_id"));
-            comment.setComment(resultSet.getString("comment"));
-            comment.setCommentId(resultSet.getInt("comment_id"));
-            comment.setCreatedAt(resultSet.getTimestamp("created_at"));
+            Comment comment = Comment.builder()
+                    .comment(resultSet.getString("comment"))
+                    .createdAt(resultSet.getTimestamp("created_at"))
+                    .build();
+
             commentList.add(comment);
         }
-        connection.close();
+
+        jdbcConnection.closeConnections(connection, pstmt, resultSet);
+
         return commentList;
     }
 
-    public int insertBoard(String comment,int boardId) throws Exception{
+    /**
+     * 댓글 등록
+     *
+     * @param comment 댓글
+     * @throws Exception
+     */
+    public void insertComment(Comment comment) throws Exception {
         JDBCConnection jdbcConnection = new JDBCConnection();
         Connection connection = jdbcConnection.getConnection();
         PreparedStatement pstmt = null;
-        ResultSet resultSet = null;
-        int generatedKey = 0;
+        int idx = 1;
 
-        Timestamp createdAt = new Timestamp(new Date().getTime());
+        String sql = "INSERT INTO tb_comment (board_id,comment) values (?,?)";
 
-        String sql = "insert into tb_comment (board_id,comment,created_at) values (?,?,?)";
-        pstmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-
-        pstmt.setInt(1, boardId);
-        pstmt.setString(2, comment);
-        pstmt.setTimestamp(3, createdAt);
+        pstmt = connection.prepareStatement(sql);
+        pstmt.setInt(idx++, comment.getBoardId());
+        pstmt.setString(idx++, comment.getComment());
         pstmt.executeUpdate();
-        ResultSet generatedKeys = pstmt.getGeneratedKeys();
-        while(generatedKeys.next()){
-            generatedKey = generatedKeys.getInt(1);
-        }
-        connection.close();
-        return generatedKey;
+
+        jdbcConnection.closeConnections(connection, pstmt, null);
+    }
+
+    /**
+     * 게시물 내 모든 댓글 삭제
+     *
+     * @param boardId boardPk
+     * @throws Exception
+     */
+    public void deleteCommentsByBoardId(int boardId) throws Exception {
+        JDBCConnection jdbcConnection = new JDBCConnection();
+        Connection connection = jdbcConnection.getConnection();
+        PreparedStatement pstmt = null;
+        int idx = 1;
+
+        String sql = "DELETE FROM tb_comment WHERE board_id = ?";
+
+        pstmt = connection.prepareStatement(sql);
+        pstmt.setInt(idx++, boardId);
+        pstmt.executeUpdate();
+
+        jdbcConnection.closeConnections(connection, pstmt, null);
     }
 }
