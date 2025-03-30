@@ -1,17 +1,17 @@
 package com.study.connection;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
+/**
+ * JDBC 커넥터
+ */
 public class JDBCConnection {
 
-    static final String DB_URL = "jdbc:mysql://localhost:3306/ebrainsoft_study";
-    static final String USER = "ebsoft";
-    static final String PASS = "ebsoft";
+    static final String DB_URL = "jdbc:mysql://localhost:3306/board-study";
+    static final String USER = "root";
+    static final String PASS = "asd@1252370";
 
-    public Connection getConnection() throws Exception{
+    public Connection getConnection() throws Exception {
 
         Connection conn = null;
         Statement stmt = null;
@@ -27,12 +27,33 @@ public class JDBCConnection {
             System.out.println("SQLState: " + ex.getSQLState());
             System.out.println("VendorError: " + ex.getErrorCode());
 
-        } catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e.getMessage());
         }
 
         return conn;
     }
 
-
+    /**
+     * DB연결 리소스 끊기
+     *
+     * @param connection connection
+     * @param pstmt      pstmt
+     * @param resultSet  resultSet
+     */
+    public void closeConnections(Connection connection, PreparedStatement pstmt, ResultSet resultSet) {
+        try {
+            if (resultSet != null) {
+                resultSet.close();
+            }
+            if (pstmt != null) {
+                pstmt.close();
+            }
+            if (resultSet != null) {
+                resultSet.close();
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
 }
