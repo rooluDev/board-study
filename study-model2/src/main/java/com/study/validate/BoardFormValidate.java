@@ -1,45 +1,65 @@
 
 package com.study.validate;
 
-import com.study.utils.IntegerUtils;
+import com.study.DTO.BoardDTO;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Board Validator
+ */
 public class BoardFormValidate {
 
-    public boolean validateCategory(int categoryId) {
-        return IntegerUtils.isUnsigned(categoryId);
+    /**
+     * 게시물 추가 시 validator
+     *
+     * @param board 추가 할 게시물
+     * @return validate 여부
+     */
+    public static boolean validateBoardForPost(BoardDTO board) {
+        boolean isValid = validateCategory(board.getCategoryId()) || validateUserName(board.getUserName()) || validatePassword(board.getPassword())
+                || validatePasswordMatch(board.getPassword(), board.getPasswordRe()) || validateTitle(board.getTitle()) || validateContent(board.getContent());
+
+        return isValid;
     }
 
-    public boolean validateUserName(String userName) {
-        if (userName == null) {
-            return false;
-        } else {
-            return userName.length() >= 3 || userName.length() < 5;
-        }
+    /**
+     * 게시물 수정 시 validator
+     *
+     * @param board 수정 할 게시물
+     * @return validate 여부
+     */
+    public static boolean validateBoardForEdit(BoardDTO board) {
+        boolean isValid = validateUserName(board.getUserName()) || validateTitle(board.getTitle()) || validateContent(board.getContent());
+
+        return isValid;
     }
 
-    public boolean validatePassword(String password) {
+    private static boolean validateCategory(int categoryId) {
+        return categoryId > 0;
+    }
+
+    private static boolean validateUserName(String userName) {
+        return userName != null && userName.length() > 2 && userName.length() < 5;
+    }
+
+    private static boolean validatePassword(String password) {
         String regex = "^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{4,16}$";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(password);
+
         return matcher.matches();
     }
 
-    public boolean validatePasswordMatch(String password, String passwordRe) {
-        return password.equals(passwordRe);
+    private static boolean validatePasswordMatch(String password, String passwordRe) {
+        return password != null && password.equals(passwordRe);
     }
 
-    public boolean validateTitle(String title) {
-        if (title.length() < 4 && title.length() >= 100) {
-            System.out.println("aaaaa");
-            return false;
-        } else {
-            return true;
-        }
+    private static boolean validateTitle(String title) {
+        return title != null && title.length() > 3 && title.length() < 101;
     }
 
-    public boolean validateContent(String content) {
-        return content.length() >= 4 || content.length() < 2000;
+    private static boolean validateContent(String content) {
+        return content != null && content.length() > 3 && content.length() < 2001;
     }
 }
