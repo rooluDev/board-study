@@ -2,52 +2,41 @@ package com.study.command;
 
 import com.study.DAO.FileDAO;
 import com.study.DTO.FileDTO;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import javax.servlet.ServletException;
+
+import java.io.*;
+import java.net.URLEncoder;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+/**
+ * 첨부파일 다운로드
+ */
 public class DownloadCommand implements Command {
 
-    public void execute(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    public void execute(HttpServletRequest request, HttpServletResponse response) throws Exception {
         int fileId = Integer.parseInt(request.getParameter("fileId"));
-        int boardId = Integer.parseInt(request.getParameter("boardId"));
-        int pageNum = Integer.parseInt(request.getParameter("pageNum"));
+
         FileDAO fileDAO = new FileDAO();
-        FileDTO file = fileDAO.findById(fileId);
+        FileDTO file = fileDAO.selectFileById(fileId);
+
         String path = file.getFilePath();
-        String fileName = file.getPhysicalName() + "." + file.getExtension();
-        String filePath = path + "/" + fileName;
-        File fileDownload = new File(filePath);
+        String fileName = file.getPhysicalName();
+        String extension = file.getExtension();
+        String fileFullPath = path + "/" + fileName + "." + extension;
+        String encodedFileName = URLEncoder.encode(file.getOriginalName(), "UTF-8").replaceAll("\\+", "%20");
+        File fileDownload = new File(fileFullPath);
+
         response.setContentType("application/octet-stream");
-        response.setHeader("Content-Disposition", "attachment;filename=" + fileName);
-        OutputStream out = response.getOutputStream();
-        FileInputStream fis = null;
-        byte[] buffer = new byte[5242880];
+        response.setHeader("Content-Disposition", "attachment;filename=\"" + encodedFileName + "\"");
 
-        try {
-            fis = new FileInputStream(fileDownload);
-
-            int temp;
-            while((temp = fis.read(buffer)) != -1) {
-                out.write(buffer, 0, temp);
+        try (BufferedInputStream in = new BufferedInputStream(new FileInputStream(fileDownload));
+             BufferedOutputStream out = new BufferedOutputStream(response.getOutputStream())) {
+            byte[] buffer = new byte[4096];
+            int bytesRead = -1;
+            while ((bytesRead = in.read(buffer)) != -1) {
+                out.write(buffer, 0, bytesRead);
             }
-        } catch (IOException var19) {
-            var19.printStackTrace();
-        } finally {
-            if (fis != null) {
-                fis.close();
-            }
-
-            if (out != null) {
-                out.close();
-            }
-
+            out.flush();
         }
-
-        response.sendRedirect("/board?command=list&boardId=" + boardId + "&pageNum=" + pageNum);
     }
 }
