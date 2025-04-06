@@ -6,50 +6,58 @@ import com.study.command.AddProcCommand;
 import com.study.command.Command;
 import com.study.command.CommentProc;
 import com.study.command.DeleteCommand;
-import com.study.command.DeleteFileCommand;
 import com.study.command.DownloadCommand;
 import com.study.command.EditCommand;
 import com.study.command.EditProcCommand;
 import com.study.command.ErrorCommand;
 import com.study.command.ListCommand;
-import com.study.command.PasswordConfirm;
+import com.study.command.PasswordConfirmCommand;
 import com.study.command.ViewCommand;
+import lombok.Getter;
 
+/**
+ * Command Factory
+ */
 public class CommandFactory {
+
+    @Getter
     private static CommandFactory instance = new CommandFactory();
 
     private CommandFactory() {
     }
 
-    public static CommandFactory getInstance() {
-        return instance;
-    }
-
+    /**
+     * Command에 맞는 Command 생성
+     *
+     * @param cmd command
+     * @return Command 객체
+     */
     public Command createCommand(String cmd) {
-        if (cmd.equals("list")) {
-            return new ListCommand();
-        } else if (cmd.equals("add")) {
-            return new AddCommand();
-        } else if (cmd.equals("addProc")) {
-            return new AddProcCommand();
-        } else if (cmd.equals("view")) {
-            return new ViewCommand();
-        } else if (cmd.equals("edit")) {
-            return new EditCommand();
-        } else if (cmd.equals("delete")) {
-            return new DeleteCommand();
-        } else if (cmd.equals("commentProc")) {
-            return new CommentProc();
-        } else if (cmd.equals("download")) {
-            return new DownloadCommand();
-        } else if (cmd.equals("deleteFile")) {
-            return new DeleteFileCommand();
-        } else if (cmd.equals("error")) {
-            return new ErrorCommand();
-        } else if (cmd.equals("passwordConfirm")) {
-            return new PasswordConfirm();
-        } else {
-            return cmd.equals("editProc") ? new EditProcCommand() : null;
+        switch (cmd) {
+            case "list":
+                return new ListCommand();
+            case "add":
+                return new AddCommand();
+            case "addProc":
+                return new AddProcCommand();
+            case "view":
+                return new ViewCommand();
+            case "edit":
+                return new EditCommand();
+            case "delete":
+                return new DeleteCommand();
+            case "commentProc":
+                return new CommentProc();
+            case "download":
+                return new DownloadCommand();
+            case "error":
+                return new ErrorCommand();
+            case "passwordConfirm":
+                return new PasswordConfirmCommand();
+            case "editProc":
+                return new EditProcCommand();
+            default:
+                return null;
         }
     }
 }
