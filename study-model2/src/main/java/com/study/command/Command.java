@@ -1,11 +1,20 @@
 
 package com.study.command;
 
-import java.io.IOException;
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+/**
+ * Command Interface
+ */
 public interface Command {
-    void execute(HttpServletRequest var1, HttpServletResponse var2) throws ServletException, IOException;
+
+    /**
+     * 실행 메소드
+     *
+     * @param request  HttpServletRequest
+     * @param response HttpServletResponse
+     * @throws Exception exception
+     */
+    void execute(HttpServletRequest request, HttpServletResponse response) throws Exception;
 }
