@@ -47,7 +47,7 @@
 <span>조회수 : </span>
 <%=board.getViews()%>
 </br>
-<form action="editProc.jsp?boardId=<%=boardId%>" onsubmit="validateForm()" method="post" enctype="multipart/form-data">
+<form action="editProc.jsp?boardId=<%=boardId%>" onsubmit="return validateForm()" method="post" enctype="multipart/form-data">
     <label for="userName">작성자</label>
     <input type="text" id="userName" name="userName" value="<%=board.getUserName()%>" placeholder="작성자">
     <br/>
