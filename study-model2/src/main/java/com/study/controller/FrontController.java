@@ -3,7 +3,7 @@ package com.study.controller;
 
 import com.study.command.Command;
 import com.study.factory.CommandFactory;
-import com.study.utils.StringUtils;
+
 import java.io.IOException;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -11,30 +11,57 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+/**
+ * Front Controller
+ */
 @WebServlet({"/board"})
 public class FrontController extends HttpServlet {
 
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    /**
+     * GET 요청 Controller
+     *
+     * @param request  HttpServletRequest
+     * @param response HttpServletResponse
+     * @throws IOException IOException
+     */
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String cmd = request.getParameter("command");
-        if (StringUtils.isNull(cmd)) {
+
+        if (cmd == null) {
             cmd = "list";
         }
 
         Command command = this.createCommand(cmd);
-        command.execute(request, response);
+
+        if (command == null) {
+            response.sendRedirect("/error");
+        }
+        try {
+            command.execute(request, response);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 
-
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    /**
+     * POST 요청 Controller
+     *
+     * @param request  HttpServletRequest
+     * @param response HttpServletResponse
+     */
+    protected void doPost(HttpServletRequest request, HttpServletResponse response){
         String cmd = request.getParameter("command");
         Command command = this.createCommand(cmd);
-        command.execute(request, response);
+        try {
+            command.execute(request, response);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private Command createCommand(String cmd) {
         CommandFactory factory = CommandFactory.getInstance();
-        Command command = factory.createCommand(cmd);
-        return command;
+        return factory.createCommand(cmd);
     }
 }
