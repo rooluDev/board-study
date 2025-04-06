@@ -1,263 +1,323 @@
 package com.study.DAO;
 
 import com.study.DTO.BoardDTO;
-import com.study.condition.EditCondition;
 import com.study.condition.SearchCondition;
 import com.study.connection.DBCPConnection;
-import com.study.utils.IntegerUtils;
-import com.study.utils.StringUtils;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Board DAO
+ */
 public class BoardDAO {
 
-    public int insertBoard(BoardDTO board) {
-        DBCPConnection dbcpConnection = new DBCPConnection();
-        Connection connection = dbcpConnection.getConnection();
-        PreparedStatement pstmt = null;
-        ResultSet resultSet = null;
-        int boardId = 0;
-        String sql = "INSERT INTO tb_board (category_id,title,content,user_name,password,created_at) VALUES (?,?,?,?,?,NOW())";
-
-        try {
-            int idx = 1;
-            pstmt = connection.prepareStatement(sql, 1);
-            pstmt.setInt(idx++, board.getCategoryId());
-            pstmt.setString(idx++, board.getTitle());
-            pstmt.setString(idx++, board.getContent());
-            pstmt.setString(idx++, board.getUserName());
-            pstmt.setString(idx++, board.getPassword());
-            pstmt.executeUpdate();
-
-            for(resultSet = pstmt.getGeneratedKeys(); resultSet.next(); boardId = resultSet.getInt(1)) {
-            }
-        } catch (SQLException var12) {
-            var12.printStackTrace();
-        } finally {
-            dbcpConnection.closeConnections(connection, pstmt, resultSet);
-        }
-
-        return boardId;
-    }
-
-    public List<BoardDTO> selectBoard(SearchCondition searchCondition, int pageSize, int startRow) {
+    /**
+     * 검색조건에 따른 게시물 리스트 반환
+     *
+     * @param searchCondition 검색조건
+     * @return 게시물 리스트
+     * @throws Exception
+     */
+    public List<BoardDTO> selectBoardList(SearchCondition searchCondition) throws Exception {
         DBCPConnection dbcpConnection = new DBCPConnection();
         Connection connection = dbcpConnection.getConnection();
         PreparedStatement pstmt = null;
         ResultSet resultSet = null;
         List<BoardDTO> boardList = new ArrayList();
         int idx = 1;
-        String sql = "SELECT * FROM tb_board WHERE created_at BETWEEN ? AND ?";
-        if (!StringUtils.isNull(searchCondition.getSearchText())) {
-            sql = sql + " AND (title LIKE ? OR user_name LIKE ? OR content LIKE ?)";
+
+        String sql = "SELECT tb_board.board_id, tb_board.title, tb_board.user_name, tb_board.views, tb_board.created_at, tb_board.edited_at, tb_category.category_name, " +
+                "(SELECT file_id " +
+                "FROM tb_file " +
+                "WHERE tb_file.board_id = tb_board.board_id " +
+                "LIMIT 1) AS file_id " +
+                "FROM tb_board " +
+                "JOIN tb_category ON tb_board.category_id = tb_category.category_id " +
+                "WHERE tb_board.created_at BETWEEN ? AND ? ";
+
+        if (!searchCondition.getSearchText().equals("")) {
+            sql += "AND (tb_board.title LIKE ? OR tb_board.user_name LIKE ? OR tb_board.content LIKE ?) ";
+        }
+        if (searchCondition.getCategoryId() != -1) {
+            sql += "AND tb_board.category_id = ? ";
+        }
+        sql += "ORDER BY created_at DESC LIMIT 10 OFFSET ?";
+
+
+        pstmt = connection.prepareStatement(sql);
+        pstmt.setTimestamp(idx++, searchCondition.getStartDateTimestamp());
+        pstmt.setTimestamp(idx++, searchCondition.getEndDateTimestamp());
+
+        if (!searchCondition.getSearchText().equals("")) {
+            pstmt.setString(idx++, "%" + searchCondition.getSearchText() + "%");
+            pstmt.setString(idx++, "%" + searchCondition.getSearchText() + "%");
+            pstmt.setString(idx++, "%" + searchCondition.getSearchText() + "%");
         }
 
-        if (IntegerUtils.isUnsigned(searchCondition.getCategoryId())) {
-            sql = sql + " AND category_id = ?";
+        if (searchCondition.getCategoryId() > 0) {
+            pstmt.setInt(idx++, searchCondition.getCategoryId());
         }
+        pstmt.setInt(idx++, searchCondition.getStartRow());
 
-        sql = sql + " ORDER BY created_at DESC LIMIT ? OFFSET ?";
+        resultSet = pstmt.executeQuery();
 
-        try {
-            pstmt = connection.prepareStatement(sql);
-            pstmt.setTimestamp(idx++, searchCondition.getStartDate());
-            pstmt.setTimestamp(idx++, searchCondition.getEndDate());
-            if (!StringUtils.isNull(searchCondition.getSearchText())) {
-                pstmt.setString(idx++, "%" + searchCondition.getSearchText() + "%");
-                pstmt.setString(idx++, "%" + searchCondition.getSearchText() + "%");
-                pstmt.setString(idx++, "%" + searchCondition.getSearchText() + "%");
-            }
-
-            if (IntegerUtils.isUnsigned(searchCondition.getCategoryId())) {
-                pstmt.setInt(idx++, searchCondition.getCategoryId());
-            }
-
-            pstmt.setInt(idx++, pageSize);
-            pstmt.setInt(idx++, startRow);
-            resultSet = pstmt.executeQuery();
-            boardList = this.getBoardList(resultSet);
-        } catch (SQLException var15) {
-            var15.printStackTrace();
-        } finally {
-            dbcpConnection.closeConnections(connection, pstmt, resultSet);
-        }
-
-        return (List)boardList;
-    }
-
-    public BoardDTO findById(int boardId) {
-        DBCPConnection dbcpConnection = new DBCPConnection();
-        Connection connection = dbcpConnection.getConnection();
-        PreparedStatement pstmt = null;
-        ResultSet resultSet = null;
-        List<BoardDTO> boardList = new ArrayList();
-        String sql = "SELECT * FROM tb_board WHERE board_id = ?;";
-
-        try {
-            pstmt = connection.prepareStatement(sql);
-            int idx = 1;
-            pstmt.setInt(idx++, boardId);
-            resultSet = pstmt.executeQuery();
-            boardList = this.getBoardList(resultSet);
-        } catch (SQLException var12) {
-            var12.printStackTrace();
-        } finally {
-            dbcpConnection.closeConnections(connection, pstmt, (ResultSet)null);
-        }
-
-        return (BoardDTO)((List)boardList).get(0);
-    }
-
-    public void deleteById(int boardId) {
-        DBCPConnection dbcpConnection = new DBCPConnection();
-        Connection connection = dbcpConnection.getConnection();
-        PreparedStatement pstmt = null;
-        String sql = "DELETE FROM tb_board WHERE board_id = ?";
-
-        try {
-            pstmt = connection.prepareStatement(sql);
-            int idx = 1;
-            pstmt.setInt(idx++, boardId);
-            pstmt.execute();
-        } catch (SQLException var10) {
-            var10.printStackTrace();
-        } finally {
-            dbcpConnection.closeConnections(connection, pstmt, (ResultSet)null);
-        }
-
-    }
-
-    public void plusViewById(int boardId) {
-        DBCPConnection dbcpConnection = new DBCPConnection();
-        Connection connection = dbcpConnection.getConnection();
-        PreparedStatement pstmt = null;
-        int idx = 1;
-        String sql = "UPDATE tb_board SET views = views + 1 WHERE board_id = ?";
-
-        try {
-            pstmt = connection.prepareStatement(sql);
-            pstmt.setInt(idx++, boardId);
-            pstmt.executeUpdate();
-        } catch (SQLException var11) {
-            var11.printStackTrace();
-        } finally {
-            dbcpConnection.closeConnections(connection, pstmt, (ResultSet)null);
-        }
-
-    }
-
-    public int countBoard(SearchCondition searchCondition) {
-        DBCPConnection dbcpConnection = new DBCPConnection();
-        Connection connection = dbcpConnection.getConnection();
-        PreparedStatement pstmt = null;
-        ResultSet resultSet = null;
-        int rowCount = 0;
-        int idx = 1;
-        String sql = "SELECT (SELECT COUNT(*) FROM tb_board WHERE created_at BETWEEN ? AND ?";
-        if (!StringUtils.isNull(searchCondition.getSearchText())) {
-            sql = sql + " AND (title LIKE ? OR user_name LIKE ? OR content LIKE ?)";
-        }
-
-        if (IntegerUtils.isUnsigned(searchCondition.getCategoryId())) {
-            sql = sql + " AND category_id = ?";
-        }
-
-        sql = sql + ") AS row_count";
-
-        try {
-            pstmt = connection.prepareStatement(sql);
-            pstmt.setTimestamp(idx++, searchCondition.getStartDate());
-            pstmt.setTimestamp(idx++, searchCondition.getEndDate());
-            if (!StringUtils.isNull(searchCondition.getSearchText())) {
-                pstmt.setString(idx++, "%" + searchCondition.getSearchText() + "%");
-                pstmt.setString(idx++, "%" + searchCondition.getSearchText() + "%");
-                pstmt.setString(idx++, "%" + searchCondition.getSearchText() + "%");
-            }
-
-            if (IntegerUtils.isUnsigned(searchCondition.getCategoryId())) {
-                pstmt.setInt(idx++, searchCondition.getCategoryId());
-            }
-
-            for(resultSet = pstmt.executeQuery(); resultSet.next(); rowCount = resultSet.getInt("row_count")) {
-            }
-        } catch (SQLException var13) {
-            var13.printStackTrace();
-        } finally {
-            dbcpConnection.closeConnections(connection, pstmt, resultSet);
-        }
-
-        return rowCount;
-    }
-
-    public void editBoard(int boardId, BoardDTO board, EditCondition editCondition) {
-        DBCPConnection dbcpConnection = new DBCPConnection();
-        Connection connection = dbcpConnection.getConnection();
-        PreparedStatement pstmt = null;
-        String sql = "UPDATE tb_board SET ";
-        int idx = 1;
-        if (!board.getTitle().equals(editCondition.getTitle())) {
-            sql = sql + "title = ?,";
-        }
-
-        if (!board.getUserName().equals(editCondition.getUserName())) {
-            sql = sql + "user_name = ?,";
-        }
-
-        if (!board.getContent().equals(editCondition.getContent())) {
-            sql = sql + "content = ?,";
-        }
-
-        if (sql.endsWith(",")) {
-            sql = sql.substring(0, sql.length() - 1);
-        }
-
-        sql = sql + ", edited_at = NOW() WHERE board_id = ?";
-
-        try {
-            pstmt = connection.prepareStatement(sql);
-            if (!board.getTitle().equals(editCondition.getTitle())) {
-                pstmt.setString(idx++, editCondition.getTitle());
-            }
-
-            if (!board.getUserName().equals(editCondition.getUserName())) {
-                pstmt.setString(idx++, editCondition.getUserName());
-            }
-
-            if (!board.getContent().equals(editCondition.getContent())) {
-                pstmt.setString(idx++, editCondition.getContent());
-            }
-
-            pstmt.setInt(idx++, boardId);
-            pstmt.executeUpdate();
-        } catch (SQLException var13) {
-            var13.printStackTrace();
-        } finally {
-            dbcpConnection.closeConnections(connection, pstmt, (ResultSet)null);
-        }
-
-    }
-
-    private List<BoardDTO> getBoardList(ResultSet resultSet) throws SQLException {
-        List<BoardDTO> boardList = new ArrayList();
-
-        while(resultSet.next()) {
-            BoardDTO board = new BoardDTO();
-            board.setBoardId(resultSet.getInt("board_id"));
-            board.setCategoryId(resultSet.getInt("category_id"));
-            board.setTitle(resultSet.getString("title"));
-            board.setViews(resultSet.getInt("views"));
-            board.setCreatedAt(resultSet.getTimestamp("created_at"));
-            board.setEditedAt(resultSet.getTimestamp("edited_at"));
-            board.setContent(resultSet.getString("content"));
-            board.setUserName(resultSet.getString("user_name"));
-            board.setPassword(resultSet.getString("password"));
+        while (resultSet.next()) {
+            BoardDTO board = BoardDTO.builder()
+                    .boardId(resultSet.getInt("board_id"))
+                    .title(resultSet.getString("title"))
+                    .userName(resultSet.getString("user_name"))
+                    .views(resultSet.getInt("views"))
+                    .createdAt(resultSet.getTimestamp("created_at"))
+                    .editedAt(resultSet.getTimestamp("edited_at"))
+                    .categoryName(resultSet.getString("category_name"))
+                    .fileId(resultSet.getInt("file_id"))
+                    .build();
             boardList.add(board);
         }
 
+        dbcpConnection.closeConnections(connection, pstmt, resultSet);
+
         return boardList;
+    }
+
+    /**
+     * 검색조건에 따른 전체 게시물 리스트의 수 반환
+     *
+     * @param searchCondition 검색조건
+     * @return 게시물 수
+     * @throws Exception
+     */
+    public int selectRowCountForBoardList(SearchCondition searchCondition) throws Exception {
+        DBCPConnection dbcpConnection = new DBCPConnection();
+        Connection connection = dbcpConnection.getConnection();
+        PreparedStatement pstmt = null;
+        ResultSet resultSet = null;
+        int idx = 1;
+        int countAll = 0;
+
+        String sql = "SELECT COUNT(*) AS row_count " +
+                "FROM ( " +
+                "  SELECT *, " +
+                "    (SELECT file_id " +
+                "     FROM tb_file " +
+                "     WHERE tb_file.board_id = tb_board.board_id " +
+                "     LIMIT 1 " +
+                "    ) AS file_id " +
+                "  FROM tb_board " +
+                "  WHERE tb_board.created_at BETWEEN ? AND ? ";
+
+        if (!searchCondition.getSearchText().equals("")) {
+            sql += "AND (tb_board.title LIKE ? OR tb_board.user_name LIKE ? OR tb_board.content LIKE ?) ";
+        }
+
+        if (searchCondition.getCategoryId() != -1) {
+            sql += "AND tb_board.category_id = ? ";
+        }
+
+        sql += ") AS sub";
+
+        pstmt = connection.prepareStatement(sql);
+        pstmt.setTimestamp(idx++, searchCondition.getStartDateTimestamp());
+        pstmt.setTimestamp(idx++, searchCondition.getEndDateTimestamp());
+
+        if (!searchCondition.getSearchText().equals("")) {
+            pstmt.setString(idx++, "%" + searchCondition.getSearchText() + "%");
+            pstmt.setString(idx++, "%" + searchCondition.getSearchText() + "%");
+            pstmt.setString(idx++, "%" + searchCondition.getSearchText() + "%");
+        }
+
+        if (searchCondition.getCategoryId() != -1) {
+            pstmt.setInt(idx++, searchCondition.getCategoryId());
+        }
+
+        resultSet = pstmt.executeQuery();
+
+        while (resultSet.next()) {
+            countAll = resultSet.getInt("row_count");
+        }
+
+        dbcpConnection.closeConnections(connection, pstmt, resultSet);
+
+        return countAll;
+    }
+
+    /**
+     * 단일 게시물 SELECT
+     *
+     * @param boardId boardId PK
+     * @return 게시물
+     */
+    public BoardDTO selectBoardById(int boardId) throws Exception {
+        DBCPConnection dbcpConnection = new DBCPConnection();
+        Connection connection = dbcpConnection.getConnection();
+        PreparedStatement pstmt = null;
+        ResultSet resultSet = null;
+        int idx = 1;
+
+        String sql = "SELECT board_id,title,views, created_at, edited_at, user_name, category_name, content " +
+                "FROM tb_board " +
+                "LEFT JOIN tb_category " +
+                "ON tb_board.category_id = tb_category.category_id " +
+                "WHERE board_id = ?";
+
+
+        pstmt = connection.prepareStatement(sql);
+
+        pstmt.setInt(idx++, boardId);
+        resultSet = pstmt.executeQuery();
+
+        BoardDTO board = null;
+        while (resultSet.next()) {
+            board = BoardDTO.builder()
+                    .boardId(resultSet.getInt("board_id"))
+                    .title(resultSet.getString("title"))
+                    .views(resultSet.getInt("views"))
+                    .createdAt(resultSet.getTimestamp("created_at"))
+                    .editedAt(resultSet.getTimestamp("edited_at"))
+                    .userName(resultSet.getString("user_name"))
+                    .categoryName(resultSet.getString("category_name"))
+                    .content(resultSet.getString("content"))
+                    .build();
+        }
+
+        dbcpConnection.closeConnections(connection, pstmt, (ResultSet) null);
+
+
+        return board;
+    }
+
+    /**
+     * tb_board 추가
+     *
+     * @param board
+     * @return
+     * @throws Exception
+     */
+    public int insertBoard(BoardDTO board) throws Exception {
+        DBCPConnection dbcpConnection = new DBCPConnection();
+        Connection connection = dbcpConnection.getConnection();
+        PreparedStatement pstmt = null;
+        ResultSet resultSet = null;
+        int idx = 1;
+        int generatedKey = 0;
+
+        String sql = "INSERT INTO tb_board (title,content,user_name,password,category_id) VALUES (?,?,?,SHA2(?,256),?)";
+        pstmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+
+        pstmt.setString(idx++, board.getTitle());
+        pstmt.setString(idx++, board.getContent());
+        pstmt.setString(idx++, board.getUserName());
+        pstmt.setString(idx++, board.getPassword());
+        pstmt.setInt(idx++, board.getCategoryId());
+        pstmt.executeUpdate();
+
+        ResultSet generatedKeys = pstmt.getGeneratedKeys();
+
+        while (generatedKeys.next()) {
+            generatedKey = generatedKeys.getInt(1);
+        }
+
+        dbcpConnection.closeConnections(connection, pstmt, resultSet);
+
+        return generatedKey;
+    }
+
+    /**
+     * 게시물 삭제
+     *
+     * @param boardId pk
+     * @throws Exception
+     */
+    public void deleteById(int boardId) throws Exception {
+        DBCPConnection dbcpConnection = new DBCPConnection();
+        Connection connection = dbcpConnection.getConnection();
+        PreparedStatement pstmt = null;
+        int idx = 1;
+
+        String sql = "DELETE FROM tb_board WHERE board_id = ?";
+
+        pstmt = connection.prepareStatement(sql);
+        pstmt.setInt(idx++, boardId);
+        pstmt.execute();
+
+        dbcpConnection.closeConnections(connection, pstmt, null);
+    }
+
+    /**
+     * 조회수 증가
+     *
+     * @param boardId PK
+     * @throws Exception
+     */
+    public void plusViewById(int boardId) throws Exception {
+        DBCPConnection dbcpConnection = new DBCPConnection();
+        Connection connection = dbcpConnection.getConnection();
+        PreparedStatement pstmt = null;
+        int idx = 1;
+
+        String sql = "UPDATE tb_board SET views = views + 1 WHERE board_id = ?";
+
+        pstmt = connection.prepareStatement(sql);
+        pstmt.setInt(idx++, boardId);
+        pstmt.executeUpdate();
+
+        dbcpConnection.closeConnections(connection, pstmt, null);
+    }
+
+    /**
+     * 게시물 수정
+     *
+     * @param board 게시물
+     * @throws Exception
+     */
+    public void updateBoard(BoardDTO board) throws Exception {
+        DBCPConnection dbcpConnection = new DBCPConnection();
+        Connection connection = dbcpConnection.getConnection();
+        PreparedStatement pstmt = null;
+        int idx = 1;
+
+        String sql = "UPDATE tb_board SET user_name = ?, title = ?, content = ?, edited_at = CURRENT_TIMESTAMP WHERE board_id = ?";
+
+        pstmt = connection.prepareStatement(sql);
+        pstmt.setString(idx++, board.getUserName());
+        pstmt.setString(idx++, board.getTitle());
+        pstmt.setString(idx++, board.getContent());
+        pstmt.setInt(idx++, board.getBoardId());
+        pstmt.executeUpdate();
+
+        dbcpConnection.closeConnections(connection, pstmt, null);
+    }
+
+    /**
+     * pw와 boardId가 일치하는 게시물 row수 반환
+     *
+     * @param boardId  pk
+     * @param password pw
+     * @return row count
+     * @throws Exception
+     */
+    public int selectBoardByPassword(int boardId, String password) throws Exception {
+        DBCPConnection dbcpConnection = new DBCPConnection();
+        Connection connection = dbcpConnection.getConnection();
+        PreparedStatement pstmt = null;
+        ResultSet resultSet = null;
+        int count = 0;
+        int idx = 1;
+
+        String sql = "SELECT COUNT(*) AS row_count FROM tb_board WHERE board_id = ? AND password = SHA2(?,256)";
+        pstmt = connection.prepareStatement(sql);
+        pstmt.setInt(idx++, boardId);
+        pstmt.setString(idx++, password);
+        resultSet = pstmt.executeQuery();
+
+        while (resultSet.next()) {
+            count = resultSet.getInt("row_count");
+        }
+
+        dbcpConnection.closeConnections(connection, pstmt, resultSet);
+
+        return count;
     }
 }

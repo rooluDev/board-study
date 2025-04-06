@@ -2,126 +2,155 @@ package com.study.DAO;
 
 import com.study.DTO.FileDTO;
 import com.study.connection.DBCPConnection;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * File DAO
+ */
 public class FileDAO {
 
-    public int insertFile(FileDTO file) {
+    /**
+     * 게시물에 있는 FileList 반환
+     *
+     * @param boardId pk
+     * @return 게시물에 있는 첨부파일 리스트
+     * @throws Exception
+     */
+    public List<FileDTO> selectFileListByBoardId(int boardId) throws Exception {
         DBCPConnection dbcpConnection = new DBCPConnection();
         Connection connection = dbcpConnection.getConnection();
         PreparedStatement pstmt = null;
         ResultSet resultSet = null;
-        int fileId = 0;
-        int idx = 1;
-        String sql = "INSERT INTO tb_file (board_id,original_name,physical_name,file_path,extension,size,created_at) VALUES (?,?,?,?,?,?,NOW());";
+        List<FileDTO> fileList = new ArrayList<>();
 
-        try {
-            pstmt = connection.prepareStatement(sql, 1);
-            pstmt.setInt(idx++, file.getBoardId());
-            pstmt.setString(idx++, file.getOriginalName());
-            pstmt.setString(idx++, file.getPhysicalName());
-            pstmt.setString(idx++, file.getFilePath());
-            pstmt.setString(idx++, file.getExtension());
-            pstmt.setInt(idx++, file.getSize());
-            pstmt.executeUpdate();
-
-            for(resultSet = pstmt.getGeneratedKeys(); resultSet.next(); fileId = resultSet.getInt(1)) {
-            }
-        } catch (SQLException var13) {
-            var13.printStackTrace();
-        } finally {
-            dbcpConnection.closeConnections(connection, pstmt, resultSet);
-        }
-
-        return fileId;
-    }
-
-    public List<FileDTO> findByBoardId(int boardId) {
-        DBCPConnection dbcpConnection = new DBCPConnection();
-        Connection connection = dbcpConnection.getConnection();
-        PreparedStatement pstmt = null;
-        ResultSet resultSet = null;
-        int idx = 1;
-        List<FileDTO> fileList = new ArrayList();
         String sql = "SELECT * FROM tb_file WHERE board_id = ?";
+        int idx = 1;
 
-        try {
-            pstmt = connection.prepareStatement(sql);
-            pstmt.setInt(idx++, boardId);
-            resultSet = pstmt.executeQuery();
-            fileList = this.getFileList(resultSet);
-        } catch (SQLException var13) {
-            var13.printStackTrace();
-        } finally {
-            dbcpConnection.closeConnections(connection, pstmt, resultSet);
+        pstmt = connection.prepareStatement(sql);
+        pstmt.setInt(idx++, boardId);
+        resultSet = pstmt.executeQuery();
+
+        while (resultSet.next()) {
+            FileDTO file = FileDTO.builder()
+                    .originalName(resultSet.getString("original_name"))
+                    .fileId(resultSet.getInt("file_id"))
+                    .build();
+
+            fileList.add(file);
         }
 
-        return (List)fileList;
+        dbcpConnection.closeConnections(connection, pstmt, resultSet);
+
+        return fileList;
     }
 
-    public FileDTO findById(int fileId) {
+    /**
+     * 파일 INSERT
+     *
+     * @param file 파일 저장
+     * @throws Exception
+     */
+    public void insertFile(FileDTO file) throws Exception {
+        DBCPConnection dbcpConnection = new DBCPConnection();
+        Connection connection = dbcpConnection.getConnection();
+        PreparedStatement pstmt = null;
+
+        int idx = 1;
+        String sql = "INSERT INTO tb_file (board_id, original_name, physical_name, file_path, extension,size) VALUES (?,?,?,?,?,?)";
+
+        pstmt = connection.prepareStatement(sql);
+        pstmt.setInt(idx++, file.getBoardId());
+        pstmt.setString(idx++, file.getOriginalName());
+        pstmt.setString(idx++, file.getPhysicalName());
+        pstmt.setString(idx++, file.getFilePath());
+        pstmt.setString(idx++, file.getExtension());
+        pstmt.setInt(idx++, file.getSize());
+        pstmt.executeUpdate();
+
+        dbcpConnection.closeConnections(connection, pstmt, null);
+    }
+
+    /**
+     * 단일 파일 SELECT
+     *
+     * @param fileId pk
+     * @return file
+     * @throws Exception
+     */
+    public FileDTO selectFileById(int fileId) throws Exception {
         DBCPConnection dbcpConnection = new DBCPConnection();
         Connection connection = dbcpConnection.getConnection();
         PreparedStatement pstmt = null;
         ResultSet resultSet = null;
-        FileDTO file = new FileDTO();
+        FileDTO file = null;
         int idx = 1;
+
         String sql = "SELECT * FROM tb_file WHERE file_id = ?";
 
-        try {
-            pstmt = connection.prepareStatement(sql);
-            pstmt.setInt(idx++, fileId);
-            resultSet = pstmt.executeQuery();
-            file = (FileDTO)this.getFileList(resultSet).get(0);
-        } catch (SQLException var13) {
-            var13.printStackTrace();
-        } finally {
-            dbcpConnection.closeConnections(connection, pstmt, resultSet);
+        pstmt = connection.prepareStatement(sql);
+        pstmt.setInt(idx++, fileId);
+        resultSet = pstmt.executeQuery();
+
+        while (resultSet.next()) {
+            file = FileDTO.builder()
+                    .boardId(resultSet.getInt("board_id"))
+                    .originalName(resultSet.getString("original_name"))
+                    .physicalName(resultSet.getString("physical_name"))
+                    .filePath(resultSet.getString("file_path"))
+                    .extension(resultSet.getString("extension"))
+                    .size(resultSet.getInt("size"))
+                    .build();
         }
+
+        dbcpConnection.closeConnections(connection, pstmt, resultSet);
 
         return file;
     }
 
-    public void deleteById(int fileId) {
+    /**
+     * 단일 파일 삭제
+     *
+     * @param fileId PK
+     * @throws Exception
+     */
+    public void deleteById(int fileId) throws Exception {
         DBCPConnection dbcpConnection = new DBCPConnection();
         Connection connection = dbcpConnection.getConnection();
         PreparedStatement pstmt = null;
         int idx = 1;
+
         String sql = "DELETE FROM tb_file WHERE file_id = ?";
 
-        try {
-            pstmt = connection.prepareStatement(sql);
-            pstmt.setInt(idx++, fileId);
-            pstmt.execute();
-        } catch (SQLException var11) {
-            var11.printStackTrace();
-        } finally {
-            dbcpConnection.closeConnections(connection, pstmt, (ResultSet)null);
-        }
+        pstmt = connection.prepareStatement(sql);
+        pstmt.setInt(idx++, fileId);
+        pstmt.executeUpdate();
 
+        dbcpConnection.closeConnections(connection, pstmt, null);
     }
 
-    private List<FileDTO> getFileList(ResultSet resultSet) throws SQLException {
-        List<FileDTO> fileList = new ArrayList();
+    /**
+     * 게시물에 있는 모든 파일 삭제
+     *
+     * @param boardId board PK
+     * @throws Exception
+     */
+    public void deleteByBoardId(int boardId) throws Exception {
+        DBCPConnection dbcpConnection = new DBCPConnection();
+        Connection connection = dbcpConnection.getConnection();
+        PreparedStatement pstmt = null;
+        int idx = 1;
 
-        while(resultSet.next()) {
-            FileDTO file = new FileDTO();
-            file.setFileId(resultSet.getInt("file_id"));
-            file.setBoardId(resultSet.getInt("board_id"));
-            file.setOriginalName(resultSet.getString("original_name"));
-            file.setPhysicalName(resultSet.getString("physical_name"));
-            file.setFilePath(resultSet.getString("file_path"));
-            file.setExtension(resultSet.getString("extension"));
-            file.setSize(resultSet.getInt("size"));
-            file.setCreatedAt(resultSet.getTimestamp("created_at"));
-            fileList.add(file);
-        }
+        String sql = "DELETE FROM tb_file WHERE board_id = ?";
 
-        return fileList;
+        pstmt = connection.prepareStatement(sql);
+        pstmt.setInt(idx++, boardId);
+        pstmt.executeUpdate();
+
+        dbcpConnection.closeConnections(connection, pstmt, null);
     }
 }
