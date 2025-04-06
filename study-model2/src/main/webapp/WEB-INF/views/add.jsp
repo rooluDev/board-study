@@ -1,16 +1,14 @@
-<%@ page import="com.study.DAO.BoardDAO" %>
 <%@ page import="java.util.List" %>
-<%@ page import="com.study.DTO.CategoryDTO" %><%--
-  Created by IntelliJ IDEA.
-  User: user
-  Date: 1/23/24
-  Time: 4:42 AM
-  To change this template use File | Settings | File Templates.
---%>
+<%@ page import="com.study.DTO.CategoryDTO" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 
 <%
     List<CategoryDTO> categoryList = (List<CategoryDTO>) request.getAttribute("categoryList");
+    String pageNum = (String) request.getAttribute("pageNum");
+    String startDate = (String) request.getAttribute("startDate");
+    String endDate = (String) request.getAttribute("endDate");
+    String categoryId = (String) request.getAttribute("categoryId");
+    String searchText = (String) request.getAttribute("searchText");
 %>
 <html>
 <head>
@@ -21,7 +19,7 @@
 <form method="post" action="/board?command=addProc" enctype="multipart/form-data" onsubmit="return validateForm()">
     <table>
         <tr>
-            <select name="category">
+            <select name="categoryId">
                 <option value="-1">카테고리 선택</option>
                 <%
                     for (CategoryDTO category : categoryList) {
@@ -61,77 +59,71 @@
 </form>
 </body>
 <script>
-    function goToList(){
-        location.href = "/board?command=list";
+    function goToList() {
+        location.href = "/board?command=list&pageNum=<%=pageNum%>&startDate=<%=startDate%>&endDate=<%=endDate%>&categoryId=<%=categoryId%>&searchText=<%=searchText%>";
     }
-    function validateForm(){
-        if (!validateCategory()){
+
+    function validateForm() {
+        const isValid = validateCategory() && validatePassword() && validateUserName() && validateTitle() && validateContent();
+        return isValid;
+    }
+
+    function validateCategory() {
+        const categoryId = document.getElementById("categoryId").value;
+
+        if (categoryId === -1) {
             alert("카테고리를 선택하세요.");
-            return false;
-        }
-        if (!validateUserName()){
-            alert("작성자를 3글자 이상, 5글자 미만으로 입력하세요.");
-            return false;
-        }
-        if (!validatePassword()){
-            alert("비밀번호를 4글자 이상, 16글자 미만, 영문/숫자/특수문자를 포함하세요.");
-            return false;
-        }
-        if (!validatePasswordMatch()){
-            alert("비밀번호가 일치하지 않습니다.");
-            return false;
-        }
-        if (!validateTitle()) {
-            alert("제목을 4글자 이상, 100글자 미만으로 입력하세요.");
-            return false;
-        }
-        if (!validateContent()) {
-            alert("내용을 4글자 이상, 2000글자 미만으로 입력하세요.");
             return false;
         }
         return true;
     }
 
-    function validateCategory(){
-        const category = document.getElementById("category").value;
-        if (category == "none") {
+    function validateUserName() {
+        const userName = document.getElementById("userName").value;
+        if (userName.length < 3 || userName.length > 4) {
+            alert("작성자를 3글자 이상, 5글자 미만으로 입력하세요.");
             return false;
         }
         return true;
     }
-    function validateUserName(){
-        const userName = document.getElementById("user_name").value;
-        if (userName.length >= 3 && userName.length <5){
-            return true;
-        }
-        return false;
-    }
-    function validatePassword(){
+
+    function validatePassword() {
         const password = document.getElementById("password").value;
+
         const regex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{4,16}$/;
-        return regex.test(password);
+        if (!regex.test(password)) {
+            alert("비밀번호를 4글자 이상, 16글자 미만, 영문/숫자/특수문자를 포함하세요.");
+            return false;
+        }
+        return true;
     }
-    function validatePasswordMatch(){
+
+    function validatePasswordMatch() {
         const password = document.getElementById("password").value;
         const passwordRe = document.getElementById("passwordRe").value;
-        if (password == passwordRe){
-            return true;
+        if (password !== passwordRe) {
+            alert("비밀번호가 일치하지 않습니다.");
+            return false;
         }
-        return false;
+        return true;
     }
-    function validateTitle(){
+
+    function validateTitle() {
         const title = document.getElementById("title").value;
-        if (title.length >= 4 && title.length < 100) {
-            return true;
+        if (title.length < 4 || title.length > 100) {
+            alert("제목을 4글자 이상, 100글자 미만으로 입력하세요.");
+            return false;
         }
-        return false;
+        return true;
     }
-    function validateContent(){
+
+    function validateContent() {
         const content = document.getElementById("content").value;
-        if (content.length >= 4 && content.length <= 2000) {
-            return true;
+        if (content.length < 4 || content.length > 2000) {
+            alert("내용을 4글자 이상, 2000글자 미만으로 입력하세요.");
+            return false;
         }
-        return false;
+        return true;
     }
 </script>
 </html>

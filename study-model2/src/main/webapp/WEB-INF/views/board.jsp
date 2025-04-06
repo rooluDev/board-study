@@ -1,24 +1,19 @@
 <%@ page import="com.study.DTO.BoardDTO" %>
 <%@ page import="com.study.DTO.CommentDTO" %>
-<%@ page import="com.study.DAO.CategoryDAO" %>
-<%@ page import="com.study.DAO.CommentDAO" %>
 <%@ page import="java.util.List" %>
 <%@ page import="com.study.DTO.FileDTO" %>
-<%@ page import="com.study.utils.TimestampUtils" %><%--
-  Created by IntelliJ IDEA.
-  User: user
-  Date: 1/24/24
-  Time: 4:36 AM
-  To change this template use File | Settings | File Templates.
---%>
+<%@ page import="com.study.utils.TimestampUtils" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%
-    int boardId = (int) request.getAttribute("boardId");
-    int pageNum = (int) request.getAttribute("pageNum");
     BoardDTO board = (BoardDTO) request.getAttribute("board");
-    String categoryName = (String) request.getAttribute("categoryName");
     List<CommentDTO> commentList = (List<CommentDTO>) request.getAttribute("commentList");
     List<FileDTO> fileList = (List<FileDTO>) request.getAttribute("fileList");
+
+    String pageNum = (String) request.getAttribute("pageNum");
+    String startDate = (String) request.getAttribute("startDate");
+    String endDate = (String) request.getAttribute("endDate");
+    String categoryId = (String) request.getAttribute("categoryId");
+    String searchText = (String) request.getAttribute("searchText");
 %>
 <html>
 <head>
@@ -29,12 +24,12 @@
 <h1>게시판 - 보기</h1>
 <%=board.getUserName()%>
 <p>등록일시</p>
-<%=TimestampUtils.parseToString(board.getCreatedAt(),"yyyy.MM.dd hh:dd")%>
+<%=TimestampUtils.parseToString(board.getCreatedAt(), "yyyy.MM.dd hh:dd")%>
 <p>수정일시</p>
 <%
     if (board.getEditedAt() != null) {
 %>
-<%= TimestampUtils.parseToString(board.getEditedAt(),"yyyy.MM.dd hh:dd")%>
+<%= TimestampUtils.parseToString(board.getEditedAt(), "yyyy.MM.dd hh:dd")%>
 <%
 } else {
 %>
@@ -43,17 +38,20 @@
     }
 %>
 <br/>
-<%=categoryName%>
+<%=board.getCategoryName()%>
 <%=board.getTitle()%>
+<br/>
+<span>조회수 : </span>
 <%=board.getViews()%>
 <br/>
 <%=board.getContent()%>
 <br/>
 <%
-    for(FileDTO file : fileList){
+    for (FileDTO file : fileList) {
 %>
-        <a href="/board?command=download&fileId=<%=file.getFileId()%>&boardId=<%=boardId%>&pageNum=<%=pageNum%>"><%=file.getOriginalName()%></a>
-        <br/>
+<a href="/board?command=download&fileId=<%=file.getFileId()%>"><%=file.getOriginalName()%>
+</a>
+<br/>
 <%
     }
 %>
@@ -61,7 +59,7 @@
 <%
     for (CommentDTO comment : commentList) {
 %>
-<%=TimestampUtils.parseToString(comment.getCreatedAt(),"yyyy.MM.dd hh:dd")%>
+<%=TimestampUtils.parseToString(comment.getCreatedAt(), "yyyy.MM.dd hh:dd")%>
 <br/>
 <%=comment.getComment()%>
 <br/>
@@ -70,73 +68,81 @@
 <%
     }
 %>
-<form action="/board?command=commentProc" method="post">
+<form action="/board?command=commentProc&boardId=<%=board.getBoardId()%>&pageNum=<%=pageNum%>&startDate=<%=startDate%>&endDate=<%=endDate%>&categoryId=<%=categoryId%>&searchText=<%=searchText%>"
+      method="post">
     <input type="text" name="comment" placeholder="댓글을 입력해주세요">
-    <input type="hidden" name="boardId" value="<%=boardId%>">
-    <input type="hidden" name="pageNum" value="<%=pageNum%>">
     <input type="submit">
 </form>
 <br/>
-<button type="button" onclick="goToList(<%=pageNum%>)">목록</button>
-<button type="button" onclick="goToEdit(<%=boardId%> , <%=pageNum%>)">수정</button>
-<button type="button" id="verifyPasswordBtn">삭제</button>
+<button type="button" onclick="goToList()">목록</button>
+<button type="button" id="editBtn">수정</button>
+<button type="button" id="deleteBtn">삭제</button>
 
 <div id="passwordVerificationModal" style="display: none;">
-    <label for="passwordInput">Enter Password:</label>
+    <label for="passwordInput">비밀번호를 입력하세요 :</label>
     <input type="password" id="passwordInput">
-    <button id="confirmPasswordBtn">Confirm</button>
-    <button id="closeModalBtn">Close</button>
+    <button id="confirmPasswordBtn">확인</button>
+    <button id="closeModalBtn">취소</button>
 </div>
 
 </body>
 <script>
-    function goToList(pageNum) {
-        location.href = "/board?command=list&pageNum=" + pageNum;
+    let actionType = "";
+
+    function goToList() {
+        location.href = "/board?command=list&pageNum=<%=pageNum%>&startDate=<%=startDate%>&endDate=<%=endDate%>&categoryId=<%=categoryId%>&searchText=<%=searchText%>";
     }
 
-    function goToEdit(boardId, pageNum) {
-        location.href = "/board?command=edit&boardId=" + boardId + "&pageNum=" + pageNum;
+    function goToEdit() {
+        location.href = "/board?command=edit&boardId=<%=board.getBoardId()%>&pageNum=<%=pageNum%>&startDate=<%=startDate%>&endDate=<%=endDate%>&categoryId=<%=categoryId%>&searchText=<%=searchText%>";
     }
 
-    function deleteBoard(boardId, pageNum) {
-        location.href = "/board?command=delete&boardId=" + boardId + "&pageNum=" + pageNum;
+    function deleteBoard(boardId) {
+        location.href = "/board?command=delete&boardId=" + boardId;
     }
 
-    $(document).ready(function() {
-        // 버튼을 클릭하면 모달 창을 띄움
-        $("#verifyPasswordBtn").click(function() {
+    $(document).ready(function () {
+        $("#editBtn").click(function () {
+            actionType = "edit";
             $("#passwordVerificationModal").show();
         });
 
-        // 확인 버튼을 클릭하면 AJAX 요청을 보냄
-        $("#confirmPasswordBtn").click(function() {
-            var enteredPassword = $("#passwordInput").val();
+        $("#deleteBtn").click(function () {
+            actionType = "delete";
+            $("#passwordVerificationModal").show();
+        });
+
+        $("#closeModalBtn").click(function () {
+            $("#passwordVerificationModal").hide();
+        });
+
+        $("#confirmPasswordBtn").click(function () {
+            const enteredPassword = $("#passwordInput").val();
 
             // AJAX 요청
             $.ajax({
                 type: "POST",
-                url: "/board?command=passwordConfirm&boardId=<%=boardId%>",
-                data: { password: enteredPassword },
-                success: function(response) {
+                url: "/board?command=passwordConfirm&boardId=<%=board.getBoardId()%>",
+                data: {password: enteredPassword},
+                success: function (response) {
                     if (response === "success") {
-                        deleteBoard(<%=boardId%>,<%=pageNum%>)
+                        if (actionType === "edit") {
+                            goToEdit();
+                        } else if (actionType === "delete") {
+                            deleteBoard(<%=board.getBoardId()%>);
+                        }
                     } else {
-                        alert("Password is incorrect!");
+                        alert("비밀번호가 일치하지 않습니다.");
                     }
-
                     // 모달 창 숨기기
                     $("#passwordVerificationModal").hide();
                 },
-                error: function() {
-                    alert("Error during password verification.");
+                error: function () {
+                    alert("error");
                 }
             });
         });
-
-        // 모달 창 닫기 버튼
-        $("#closeModalBtn").click(function() {
-            $("#passwordVerificationModal").hide();
-        });
     });
+
 </script>
 </html>
