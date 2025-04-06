@@ -1,12 +1,17 @@
 package com.study.DTO;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.sql.Timestamp;
 
+/**
+ * File Dto
+ */
 @Getter
 @Setter
+@Builder
 public class FileDTO {
     private int fileId;
     private int boardId;
