@@ -10,16 +10,11 @@ import java.util.List;
  */
 @Mapper
 public interface CategoryMapper {
-    /**
-     * Category 조회
-     * @return
-     */
-    List<CategoryDTO> getCategory();
 
     /**
-     * pk로 categoryName 조회
-     * @param categoryId
-     * @return
+     * Category 조회
+     *
+     * @return DB에 저장된 카테고리 리스트
      */
-    String findById(Long categoryId);
+    List<CategoryDTO> getCategory();
 }
