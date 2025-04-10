@@ -1,34 +1,35 @@
 package com.study.controller;
 
-import com.study.form.CommentAddForm;
+import com.study.condition.SearchCondition;
+import com.study.dto.CommentDTO;
 import com.study.service.CommentService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.study.utils.ConditionUtils;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 
 /**
- * Comment관련 controller
+ * Comment controller
  */
 @Controller
+@RequiredArgsConstructor
 public class CommentController {
-    private final CommentService commentService;
 
-    @Autowired
-    public CommentController(CommentService commentService) {
-        this.commentService = commentService;
-    }
+    private final CommentService commentService;
 
     /**
      * comment 추가
-     * @param commentAddForm
-     * @return
+     *
+     * @param comment 댓글
+     * @return view
      */
     @PostMapping(value = {"/comment/add"})
-    public String addComment(CommentAddForm commentAddForm){
+    public String addComment(@ModelAttribute CommentDTO comment, @ModelAttribute SearchCondition searchCondition) {
         // 댓글 저장
-        commentService.createComment(commentAddForm.getBoardId(),commentAddForm.getComment());
+        commentService.createComment(comment);
 
-        return "redirect:/boards/free/view/" + commentAddForm.getBoardId() + "?pageNum=" + commentAddForm.getPageNum();
+        return "redirect:/board/view/" + comment.getBoardId() + "?" + ConditionUtils.convertToQueryString(searchCondition);
     }
 
 }
