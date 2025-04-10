@@ -5,13 +5,7 @@
 
 <mapper namespace="com.study.mapper.CategoryMapper">
     <select id="getCategory" resultType="com.study.dto.CategoryDTO">
-        SELECT  *
+        SELECT *
         FROM tb_category;
-    </select>
-
-    <select id="findById" parameterType="Long" resultType="String">
-        SELECT category_name
-        FROM tb_category
-        WHERE category_id = #{categoryId}
     </select>
 </mapper>
