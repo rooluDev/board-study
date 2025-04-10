@@ -14,21 +14,23 @@ public interface CommentMapper {
 
     /**
      * boardId로 댓글 가져오기
-     * @param boardId
-     * @return
+     *
+     * @param boardId board Pk
+     * @return 게시물에 있는 댓글 리스트
      */
-    List<CommentDTO> findByBoardId(Long boardId);
+    List<CommentDTO> selectByBoardId(Long boardId);
 
     /**
      * 댓글 추가
-     * @param boardId
-     * @param comment
+     *
+     * @param comment 저장 할 댓글
      */
-    void insertComment(@Param("boardId") Long boardId, @Param("comment") String comment);
+    void insertComment(CommentDTO comment);
 
     /**
      * board의 댓글 삭제
-     * @param boardId
+     *
+     * @param boardId board pk
      */
     void deleteByBoardId(Long boardId);
 }
