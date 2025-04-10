@@ -1,92 +1,62 @@
 package com.study.controller;
 
+import com.study.condition.SearchCondition;
 import com.study.dto.BoardDTO;
 import com.study.dto.CategoryDTO;
 import com.study.dto.CommentDTO;
 import com.study.dto.FileDTO;
-import com.study.condition.BoardSelectCondition;
-import com.study.form.*;
-import com.study.returnType.BoardListAndCount;
 import com.study.service.BoardService;
 import com.study.service.CategoryService;
 import com.study.service.CommentService;
 import com.study.service.FileService;
-import com.study.utils.EncryptUtils;
-import com.study.utils.StringUtils;
-import com.study.validate.Validator;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.study.validate.BoardValidator;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
 
 /**
- * Board관련 Controller
+ * Board Controller
  */
 @Controller
+@RequiredArgsConstructor
 public class BoardController {
+
     private final BoardService boardService;
     private final CategoryService categoryService;
     private final FileService fileService;
     private final CommentService commentService;
 
-    @Autowired
-    public BoardController(BoardService boardService, CategoryService categoryService, FileService fileService, CommentService commentService) {
-        this.boardService = boardService;
-        this.categoryService = categoryService;
-        this.fileService = fileService;
-        this.commentService = commentService;
-    }
-
     /**
-     * 자유 게시판 - 목록 페이지
+     * 게시판 - 목록 페이지
      *
-     * @param model
-     * @param searchForm
-     * @param pageNum
-     * @return
+     * @param model           Model
+     * @param searchCondition 검색조건
+     * @return list
      */
-    @GetMapping(value = {"/boards/free/list"})
-    public String getBoardList(Model model, SearchForm searchForm, @RequestParam(defaultValue = "1") int pageNum) {
-        // SearchCondition 설정
-        if (searchForm == null) {
-            searchForm = new SearchForm();
-        }
-
-        // 페이지네이션 정보 설정
-        int pageSize = 10;
-        int startRow = (pageNum - 1) * pageSize;
-
-        // boardSelectCondition 설정
-        BoardSelectCondition boardSelectCondition = BoardSelectCondition.builder()
-                .startDate(StringUtils.parseToTimestampStart(searchForm.getStartDate()))
-                .endDate(StringUtils.parseToTimestampEnd(searchForm.getEndDate()))
-                .categoryId(searchForm.getCategoryId())
-                .searchText(searchForm.getSearchText())
-                .pageSize(pageSize)
-                .startRow(startRow)
-                .build();
+    @GetMapping(value = {"/board/list"})
+    public String getBoardList(Model model, @ModelAttribute SearchCondition searchCondition) {
 
         // 필요한 정보들 가져오기
-        BoardListAndCount boardListAndCount = boardService.search(boardSelectCondition);
+        List<BoardDTO> boardList = boardService.getBoardListByCondition(searchCondition);
+        int boardCount = boardService.getBoardCountByCondition(searchCondition);
         List<CategoryDTO> categoryList = categoryService.getCategoryList();
 
         // 필요한 정보들 설정
-        List<BoardDTO> boardList = boardListAndCount.getBoardList();
-        int totalBoardCount = boardListAndCount.getRowCount();
-        int totalPageNum = (int) Math.ceil((double) boardListAndCount.getRowCount() / (double) pageSize);
+        int totalPageNum = (int) Math.ceil((double) boardCount / (double) searchCondition.getPageSize());
 
         // 정보들 넘겨주기
         model.addAttribute("boardList", boardList);
         model.addAttribute("categoryList", categoryList);
-        model.addAttribute("pageNum", pageNum);
         model.addAttribute("totalPageNum", totalPageNum);
-        model.addAttribute("totalBoardCount", totalBoardCount);
-        model.addAttribute("searchForm", searchForm);
+        model.addAttribute("boardCount", boardCount);
+        model.addAttribute("searchCondition", searchCondition);
 
         return "list";
     }
@@ -94,162 +64,167 @@ public class BoardController {
     /**
      * 게시판 - 등록 페이지
      *
-     * @param model
-     * @return
+     * @param model           Model
+     * @param searchCondition 검색조건 유지
+     * @return post
      */
-    @GetMapping(value = {"/board/free/write"})
-    public String writeBoard(Model model) {
+    @GetMapping(value = {"/board/post"})
+    public String postBoard(Model model, @ModelAttribute SearchCondition searchCondition) {
+
         // 필요한 정보 가져오기
         List<CategoryDTO> categoryList = categoryService.getCategoryList();
 
         // 정보 넘겨주기
         model.addAttribute("categoryList", categoryList);
+        model.addAttribute("searchCondition", searchCondition);
 
-        return "write";
-    }
-
-    /**
-     * 게시판 등록 POST
-     *
-     * @param createBoardForm
-     * @return
-     * @throws Exception
-     */
-    // TODO : /board/create ?
-    @PostMapping(value = {"/create"})
-    public String createBoard(CreateBoardForm createBoardForm){
-        // 유효성 검사
-        try {
-            Validator.validateBoardInput(createBoardForm);
-        } catch (IllegalArgumentException e) {
-            return "redirect:/boards/free/list";
-        }
-
-        // BoardDTO 설정
-        BoardDTO board = BoardDTO.builder()
-                .categoryId(createBoardForm.getCategoryId())
-                .userName(createBoardForm.getUserName())
-                .password(EncryptUtils.encryptPassword(createBoardForm.getPassword()))
-                .title(createBoardForm.getTitle())
-                .content(createBoardForm.getContent())
-                .build();
-
-        // board 저장
-        boardService.addBoard(board);
-
-        // file 저장
-        try{
-            fileService.uploadFile(createBoardForm.getFile(), board.getBoardId());
-        }catch (IOException e){
-            e.printStackTrace();
-        }
-
-        return "redirect:/boards/free/list";
+        return "post";
     }
 
     /**
      * 게시판 - 보기 페이지
-     * @param model
-     * @param seq
-     * @param pageNum
-     * @return
+     *
+     * @param model           Model
+     * @param boardId         pathVariable
+     * @param searchCondition 검색조건 유지
+     * @return view
      */
-    @GetMapping(value = {"/boards/free/view/{seq}"})
-    public String viewBoard(Model model, @PathVariable Long seq, @RequestParam int pageNum) {
-        // view 증가
-        boardService.increaseView(seq);
+    @GetMapping(value = {"/board/view/{boardId}"})
+    public String viewBoard(Model model, @PathVariable Long boardId, @ModelAttribute SearchCondition searchCondition) {
 
         // 필요한 정보 가져오기
-        BoardDTO board = boardService.findBoard(seq);
-        String categoryName = categoryService.findCategoryName(board.getCategoryId());
-        List<FileDTO> fileList = fileService.findFiles(board.getBoardId());
-        List<CommentDTO> commentList = commentService.getComments(seq);
+        BoardDTO board = boardService.getBoard(boardId);
+        List<FileDTO> fileList = fileService.getFileListByBoardId(boardId);
+        List<CommentDTO> commentList = commentService.getCommentList(boardId);
+
+        // view 증가
+        boardService.increaseView(boardId);
 
         // 정보 넘겨주기
         model.addAttribute("board", board);
-        model.addAttribute("categoryName", categoryName);
         model.addAttribute("fileList", fileList);
         model.addAttribute("commentList", commentList);
-        model.addAttribute("pageNum", pageNum);
+        model.addAttribute("searchCondition", searchCondition);
 
         return "view";
     }
 
     /**
-     * 비밀번호 확인 AJAX 요청
-     * @return
-     */
-    @PostMapping("/board/passwordConfirm/ajax")
-    public ResponseEntity<String> getPasswordAjax(@RequestBody AjaxPwValidateForm ajaxPwValidateForm){
-        // 비밀번호 설정
-        String inputPassword = EncryptUtils.encryptPassword(ajaxPwValidateForm.getPassword());
-        String dbPassword = boardService.findPassword(ajaxPwValidateForm.getBoardId());
-
-        // 비밀번호 불일치
-        if (!inputPassword.equals(dbPassword)) {
-            return new ResponseEntity<>("fail", HttpStatus.BAD_REQUEST);
-        }
-
-        //비밀번호 일치
-        return new ResponseEntity<>("success", HttpStatus.OK);
-    }
-
-    /**
      * 게시판 - 수정 페이지
+     *
+     * @param model           Model
+     * @param boardId         pathVariable
+     * @param searchCondition 검색조건 유지
+     * @return edit
      */
-    @GetMapping("/board/free/modify/{boardId}")
-    public String modifyBoard(Model model, @PathVariable Long boardId, @RequestParam int pageNum){
+    @GetMapping("/board/edit/{boardId}")
+    public String editBoard(Model model, @PathVariable Long boardId, @ModelAttribute SearchCondition searchCondition) {
+
         // 정보 가져오기
-        BoardDTO board = boardService.findBoard(boardId);
-        String categoryName = categoryService.findCategoryName(board.getCategoryId());
-        List<FileDTO> fileList = fileService.findFiles(boardId);
+        BoardDTO board = boardService.getBoard(boardId);
+        List<FileDTO> fileList = fileService.getFileListByBoardId(boardId);
 
         // 정보 넘겨주기
         model.addAttribute("board", board);
-        model.addAttribute("categoryName", categoryName);
         model.addAttribute("fileList", fileList);
-        model.addAttribute("pageNum", pageNum);
+        model.addAttribute("searchCondition", searchCondition);
 
-        return "modify";
+        return "edit";
+    }
+
+    /**
+     * 게시판 등록 POST
+     *
+     * @param board    등록할 게시물
+     * @param fileList 등록할 파일들
+     * @return list
+     */
+    @PostMapping(value = {"/board/post"})
+    public String postBoard(@ModelAttribute BoardDTO board, @RequestParam(name = "file") List<MultipartFile> fileList) {
+        // 유효성 검사
+        if (!BoardValidator.validateBoardForPost(board)) {
+            return "redirect:/error";
+        }
+
+
+        // board 저장
+        Long boardId = boardService.postBoard(board);
+
+        // file 저장
+        try {
+            fileService.uploadFile(fileList, boardId);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return "redirect:/board/list";
     }
 
     /**
      * 게시물 수정
-     * @param updateForm
-     * @return
+     *
+     * @param board            수정할 게시물
+     * @param fileList         등록할 파일
+     * @param deleteFileIdList 삭제할 파일 pk 리스트
+     * @return list
      */
-    @PostMapping(value = {"/board/update"})
-    public String updateBoard(UpdateForm updateForm){
-        // boardDTO 설정
-        BoardDTO board = BoardDTO.builder()
-                .boardId(updateForm.getBoardId())
-                .userName(updateForm.getUserName())
-                .title(updateForm.getTitle())
-                .content(updateForm.getContent())
-                .build();
+    @PostMapping(value = {"/board/edit/{boardId}"})
+    public String updateBoard(@ModelAttribute BoardDTO board,
+                              @PathVariable Long boardId,
+                              @RequestParam(name = "newFile", required = false) List<MultipartFile> fileList,
+                              @RequestParam(name = "deleteFileIdList", required = false) List<Long> deleteFileIdList) throws IOException {
 
+        if (!BoardValidator.validateBoardForEdit(board)) {
+            return "redirect:/board/list";
+        }
         // 게시물 수정
-        boardService.modifyBoard(board);
+        board.setBoardId(boardId);
+        boardService.editBoard(board);
 
         // 파일 삭제
-        fileService.deleteSelectedFiles(updateForm.getDeleteFileIds());
+        if (deleteFileIdList != null && !deleteFileIdList.isEmpty()) {
+            deleteFileIdList.forEach(fileService::deleteById);
+        }
 
-        return "redirect:/boards/free/view/" + updateForm.getBoardId() + "?pageNum=" + updateForm.getPageNum();
+        if (fileList != null && !fileList.isEmpty()) {
+            fileService.uploadFile(fileList, board.getBoardId());
+        }
+
+        return "redirect:/board/list";
     }
 
     /**
      * 게시물 삭제
-     * @param boardId
-     * @param pageNum
-     * @return
+     *
+     * @param boardId pathVariable
+     * @return redirect /board/list
      */
     @GetMapping(value = {"/board/delete/{boardId}"})
-    public String deleteBoard(@PathVariable Long boardId,@RequestParam int pageNum){
+    public String deleteBoard(@PathVariable Long boardId) {
         // 삭제
-        commentService.deleteComments(boardId);
-        fileService.deleteFiles(boardId);
+        commentService.deleteCommentListByBoardId(boardId);
+        fileService.deleteFileListByBoardId(boardId);
         boardService.deleteBoard(boardId);
 
-        return "redirect:/boards/free/list" + "?pageNum=" + pageNum;
+        return "redirect:/board/list";
+    }
+
+    /**
+     * 비밀번호 확인
+     *
+     * @param boardId         pk
+     * @param enteredPassword 입력한 비밀번호
+     * @return ResponseEntity
+     */
+    @PostMapping(value = {"/board/passwordConfirm"})
+    public ResponseEntity confirmPassword(@RequestParam(name = "boardId") Long boardId, @RequestParam(name = "enteredPassword") String enteredPassword) {
+
+        // 비밀번호 불일치
+        if (!boardService.findByIdAndPassword(boardId, enteredPassword)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        //비밀번호 일치
+        return ResponseEntity.ok().build();
     }
 }
