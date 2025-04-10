@@ -12,33 +12,38 @@ import java.util.List;
 public interface FileMapper {
     /**
      * File Create
-     * @param file
+     *
+     * @param file 저장할 파일
      */
-    void createFile(FileDTO file);
+    void insertFile(FileDTO file);
 
     /**
-     * boardId로 files 찾기
-     * @param boardId
-     * @return
+     * boardId로 fileList 찾기
+     *
+     * @param boardId board PK
+     * @return 게시물에 있는 첨부파일 리스트
      */
-    List<FileDTO> findByBoardId(Long boardId);
+    List<FileDTO> selectByBoardId(Long boardId);
 
     /**
      * pk로 파일 찾기
-     * @param fileId
-     * @return
+     *
+     * @param fileId pk
+     * @return 단일 파일
      */
-    FileDTO findByFileId(Long fileId);
+    FileDTO selectById(Long fileId);
 
     /**
      * boardId 일치하는 파일들 삭제
-     * @param boardId
+     *
+     * @param boardId board PK
      */
     void deleteByBoardId(Long boardId);
 
     /**
      * pk로 파일 삭제하기
-     * @param fileId
+     *
+     * @param fileId PK
      */
     void deleteById(Long fileId);
 }
