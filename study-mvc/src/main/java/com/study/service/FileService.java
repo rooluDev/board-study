@@ -3,6 +3,7 @@ package com.study.service;
 import com.study.dto.FileDTO;
 import com.study.mapper.FileMapper;
 import com.study.utils.MultipartFileUtils;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -16,79 +17,77 @@ import java.util.UUID;
  * File Service
  */
 @Service
+@RequiredArgsConstructor
 public class FileService {
+
     private final FileMapper fileMapper;
     static final String REAL_PATH = "/Users/user/upload/";
-
-    public FileService(FileMapper fileMapper) {
-        this.fileMapper = fileMapper;
-    }
 
     /**
      * File Upload
      *
-     * @param multipartFiles
-     * @param boardId
+     * @param fileList 저장할 파일 리스트
+     * @param boardId  board PK
      */
-    public void uploadFile(MultipartFile[] multipartFiles, Long boardId) throws IOException {
-        if(multipartFiles != null) {
-            for (MultipartFile multipartFile : multipartFiles) {
-                if (!multipartFile.isEmpty()) {
-                    // File DTO 생성
-                    FileDTO file = FileDTO.builder()
-                            .boardId(boardId)
-                            .originalName(multipartFile.getOriginalFilename())
-                            .physicalName(UUID.randomUUID().toString())
-                            .filePath(REAL_PATH)
-                            .extension(MultipartFileUtils.extractExtension(multipartFile.getOriginalFilename()))
-                            .size(multipartFile.getSize())
-                            .build();
+    public void uploadFile(List<MultipartFile> fileList, Long boardId) throws IOException {
+        for (MultipartFile multipartFile : fileList) {
+            if (!multipartFile.isEmpty()) {
+                // File DTO 생성
+                FileDTO file = FileDTO.builder()
+                        .boardId(boardId)
+                        .originalName(multipartFile.getOriginalFilename())
+                        .physicalName(UUID.randomUUID().toString())
+                        .filePath(REAL_PATH)
+                        .extension(MultipartFileUtils.extractExtension(multipartFile.getOriginalFilename()))
+                        .size(multipartFile.getSize())
+                        .build();
 
-                    // Server 저장
-                    String filePath = REAL_PATH + file.getPhysicalName() + "." + file.getExtension();
-                    File uploadedFile = new File(filePath);
-                    FileUtils.copyInputStreamToFile(multipartFile.getInputStream(), uploadedFile);
+                // Server 저장
+                String filePath = REAL_PATH + file.getPhysicalName() + "." + file.getExtension();
+                File uploadedFile = new File(filePath);
+                FileUtils.copyInputStreamToFile(multipartFile.getInputStream(), uploadedFile);
 
-                    // File DB Add
-                    fileMapper.createFile(file);
-                }
+                // File DB Add
+                fileMapper.insertFile(file);
             }
         }
     }
 
     /**
      * 게시물에 저장된 파일들 가져오기
-     * @param boardId
-     * @return
+     *
+     * @param boardId board Pk
+     * @return 게시물에 있는 천부파일 리스트
      */
-    public List<FileDTO> findFiles(Long boardId){
-        return fileMapper.findByBoardId(boardId);
+    public List<FileDTO> getFileListByBoardId(Long boardId) {
+        return fileMapper.selectByBoardId(boardId);
     }
 
     /**
-     * 파일 하나 찾기
-     * @param fileId
-     * @return
+     * 단일 파일 찾기
+     *
+     * @param fileId pk
+     * @return 파일
      */
-    public FileDTO findOne(Long fileId){
-        return fileMapper.findByFileId(fileId);
+    public FileDTO getFile(Long fileId) {
+        return fileMapper.selectById(fileId);
     }
 
     /**
      * 게시물에 저장된 파일들 삭제
-     * @param boardId
+     *
+     * @param boardId board Pk
      */
-    public void deleteFiles(Long boardId){
+    public void deleteFileListByBoardId(Long boardId) {
         fileMapper.deleteByBoardId(boardId);
     }
 
     /**
-     * pk들로 파일 지우기
-     * @param fileIdList
+     * 단일 파일 삭제
+     *
+     * @param fileId Pk
      */
-    public void deleteSelectedFiles(List<Long> fileIdList){
-        for(Long fileId : fileIdList){
-            fileMapper.deleteById(fileId);
-        }
+    public void deleteById(Long fileId) {
+        fileMapper.deleteById(fileId);
     }
 }
