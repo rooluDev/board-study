@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+</head>
+<body>
+<h1>게시판 - 수정</h1>
+<h2>기본 정보</h2>
+<p>카테고리</p>
+<span th:text="${board.categoryName}"></span>
+<br/>
+
+<p>등록 일시</p>
+<span th:text="${#dates.format(board.createdAt, 'yyyy.MM.dd hh:mm')}"></span>
+<br/>
+
+<p>수정 일시</p>
+<span th:if="${board.editedAt != null}" th:text="${#dates.format(board.editedAt, 'yyyy.MM.dd hh:mm')}"></span>
+<span th:unless="${board.editedAt != null}">-</span>
+<br/>
+
+<p>조회수</p>
+<span th:text="${board.views}"></span>
+<br/>
+
+<form method="post" th:action="@{/board/edit/{boardId}(boardId = ${board.boardId})}" enctype="multipart/form-data"
+      id="editForm">
+    <span>작성자</span>
+    <input type="text" th:value="${board.userName}" name="userName" minlength="3" maxlength="4" required>
+    <br/>
+
+    <span>비밀번호</span>
+    <input type="password" id="password" name="password" minlength="4" maxlength="15" required>
+    <br/>
+
+    <span>제목</span>
+    <input type="text" th:value="${board.title}" name="title" minlength="4" maxlength="99" required>
+    <br/>
+
+    <span>내용</span>
+    <input type="text" th:value="${board.content}" name="content" minlength="4" maxlength="1999">
+    <br/>
+
+    <span>파일 첨부</span>
+
+    <div th:each="file : ${fileList}" th:id="|fileBox${file.fileId}|">
+        <span th:text="${file.originalName}"></span>
+        <button type="button" th:onclick="|deleteFile(${file.fileId})|">X</button>
+    </div>
+    <div id="newFiles"></div>
+    <button type="button" onclick="addFileInput()">첨부파일 추가</button>
+    <br/>
+    <input type="hidden" id="deleteFileId" name="deleteFileIdList">
+    <button type="button" onclick="goToBoard()">취소</button>
+    <button type="submit">저장</button>
+</form>
+</body>
+<script th:inline="javascript">
+    let existingFileCount = [[${fileList.size()}]];
+    let newFileCount = 0;
+    let maxFiles = 3;
+
+    const searchCondition = [[${searchCondition}]];
+    const boardId = [[${board.boardId}]];
+
+    const deleteFile = (fileId) => {
+        const deleteFileIdElement = document.getElementById("deleteFileId");
+
+        const fileBoxElement = document.getElementById("fileBox" + fileId);
+        if (fileBoxElement) {
+            fileBoxElement.remove();
+        }
+        if (deleteFileIdElement.value === "") {
+            deleteFileIdElement.value = fileId;
+            existingFileCount--;
+        } else {
+            deleteFileIdElement.value += "," + fileId;
+        }
+    }
+
+    const addFileInput = () => {
+        if (existingFileCount + newFileCount >= maxFiles) {
+            alert("첨부파일은 최대 " + maxFiles + "개까지 가능합니다.");
+            return;
+        }
+        newFileCount++;
+        const newFilesContainer = document.getElementById("newFiles");
+        const input = document.createElement("input");
+        input.type = "file";
+        input.name = "newFile";
+        newFilesContainer.appendChild(input);
+        newFilesContainer.appendChild(document.createElement("br"));
+    }
+
+    const passwordConfirm = () => {
+        const enteredPassword = $("#password").val();
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                    type: "POST",
+                    url: "/board/passwordConfirm",
+                    data: {
+                        boardId: boardId, enteredPassword: enteredPassword
+                    },
+                    success: () => {
+                        resolve(true);
+                    },
+                    error: () => {
+                        resolve(false);
+                    }
+                }
+            )
+        })
+    }
+
+    $("#editForm").submit((event) => {
+        event.preventDefault();
+        const form = $("#editForm").get(0);
+        passwordConfirm().then((isValid) => {
+            if (isValid) {
+                $("#editForm").off("submit");
+                form.submit();
+            } else {
+                alert("비밀번호가 일치하지 않습니다.");
+            }
+        });
+    });
+
+    const goToBoard = () => {
+        location.href = `/board/view/${boardId}?startDate=${searchCondition.startDate}&endDate=${searchCondition.endDate}&categoryId=${searchCondition.categoryId}&searchText=${searchCondition.searchText}&pageNum=${searchCondition.pageNum}`;
+    }
+</script>
+</html>
