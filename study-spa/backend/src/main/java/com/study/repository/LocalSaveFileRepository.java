@@ -14,15 +14,10 @@ import java.io.IOException;
  */
 @Repository
 public class LocalSaveFileRepository implements SaveFileRepository{
+
     @Value("#{file['file.path']}")
     private String path;
 
-    /**
-     * server에 파일 저장
-     * @param fileDto
-     * @param multipartFile
-     * @throws IOException
-     */
     public void createFile(FileDto fileDto , MultipartFile multipartFile) throws IOException {
         String filePath = path + fileDto.getPhysicalName() + "." + fileDto.getExtension();
         File uploadedFile = new File(filePath);
