@@ -1,26 +1,20 @@
 package com.study.mapper;
 
-import com.study.entity.Category;
+import com.study.dto.CategoryDto;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
- * Category Mapper
+ * CategoryDto Mapper
  */
 @Mapper
 public interface CategoryMapper {
-    /**
-     * DB에 있는 모든 카테고리 리스트 검색
-     * @return
-     */
-    List<Category> getCategoryList();
 
     /**
-     * pk로 카테고리 검색
-     * @param categoryId
-     * @return
+     * Category 조회
+     *
+     * @return DB에 저장된 카테고리 리스트
      */
-    Optional<Category> findById(Long categoryId);
+    List<CategoryDto> getCategory();
 }
