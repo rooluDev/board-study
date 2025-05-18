@@ -1,11 +1,9 @@
 package com.study.exception.common;
 
-import com.study.exception.*;
-import com.study.exception.common.error.ErrorCode;
-import com.study.exception.common.error.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -13,6 +11,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.NoSuchElementException;
 
 /**
  * RestController에서 발생하는 Exception 처리하는 GlobalExceptionHandler
@@ -20,146 +19,108 @@ import java.sql.SQLException;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    /**
+     * IllegalStateException 처리 Handler
+     *
+     * @return BAD_REQUEST BAD_REQUEST
+     */
+    protected ResponseEntity handleIllegalStateException(IllegalStateException e){
+        log.error("IllegalStateException occurred. message={}", e.getMessage(), e);
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    }
+
+    /**
+     * NoSuchElementException 처리 Handler
+     *
+     * @return BAD_REQUEST
+     */
+    protected ResponseEntity handleNoSuchElementException(NoSuchElementException e){
+        log.error("NoSuchElementException occurred. message={}", e.getMessage(), e);
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    }
+
+    /**
+     * BadCredentialsException 처리 Handler
+     *
+     * @return UNAUTHORIZED
+     */
+    protected ResponseEntity handleBadCredentialsException(BadCredentialsException e){
+        log.error("BadCredentialsException occurred. message={}", e.getMessage(), e);
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
     /**
      * SQLException 처리 Handler
-     * @return
+     *
+     * @return INTERNAL_SERVER_ERROR
      */
     @ExceptionHandler(SQLException.class)
-    protected  ResponseEntity<ErrorResponse> handleSQLException(){
-        log.error("SQL Exception");
-        final ErrorResponse response = ErrorResponse.of(ErrorCode.SQL_ERROR);
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+    protected ResponseEntity handleSQLException(SQLException e) {
+        log.error("SQLException occurred. message={}", e.getMessage(), e);
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
 
     /**
      * IOException 처리 핸들러
-     * @return
+     *
+     * @return INTERNAL_SERVER_ERROR
      */
     @ExceptionHandler(IOException.class)
-    protected  ResponseEntity<ErrorResponse> handleIOException(){
-        log.error("IOException");
-        final ErrorResponse response = ErrorResponse.of(ErrorCode.IO_ERROR);
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+    protected ResponseEntity handleIOException(IOException e) {
+        log.error("IOException occurred. message={}", e.getMessage(), e);
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
 
     /**
-     * @requestBody @requestParam @ModelAttribute에 유효하지 않은 값이 넘어올 때
-     * @return
+     * requestBody @requestParam @ModelAttribute에 유효하지 않은 값이 넘어올 때
+     *
+     * @return INTERNAL_SERVER_ERROR
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    protected  ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(){
-        log.error("MethodArgumentNotValidException");
-        final ErrorResponse response = ErrorResponse.of(ErrorCode.MISSING_REQUEST_PARAMETER_ERROR);
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+    protected ResponseEntity handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+        log.error("MethodArgumentNotValidException occurred. message={}", e.getMessage(), e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
 
     /**
-     * @PathVaiable에 유효하지 않은 값이 넘어올 때
-     * @return
+     * PathVaiable에 유효하지 않은 값이 넘어올 때
+     *
+     * @return INTERNAL_SERVER_ERROR
      */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    protected  ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(){
-        log.error("MethodArgumentTypeMismatchException");
-        final ErrorResponse response = ErrorResponse.of(ErrorCode.NOT_VALID_ERROR);
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+    protected ResponseEntity handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
+        log.error("MethodArgumentTypeMismatchException occurred. message={}", e.getMessage(), e);
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
 
     /**
      * NullPointerException처리, @requsetBody에 변수 값이 넘어오지 않았을 때
-     * @return
+     *
+     * @return INTERNAL_SERVER_ERROR
      */
     @ExceptionHandler(NullPointerException.class)
-    protected  ResponseEntity<ErrorResponse> handleNullPointerException(){
-        log.error("NullPointerException");
-        final ErrorResponse response = ErrorResponse.of(ErrorCode.NULL_POINT_ERROR);
-        return ResponseEntity.status(HttpStatus.OK).body(response);
-    }
+    protected ResponseEntity handleNullPointerException(NullPointerException e) {
+        log.error("NullPointerException occurred. message={}", e.getMessage(), e);
 
-    /**
-     * 존재하지 않은 pk로 board select해서 빈값 넘어올 때
-     * @return
-     */
-    @ExceptionHandler(BoardNotFoundException.class)
-    protected ResponseEntity<ErrorResponse> handleBoardNotFoundException(){
-        log.error("BoardNotFoundException");
-        final ErrorResponse response = ErrorResponse.of(ErrorCode.BOARD_NOT_FOUND_ERROR);
-        return ResponseEntity.status(HttpStatus.OK).body(response);
-    }
 
-    /**
-     * 존재하지 않은 pk로 category select해서 빈값 넘어올 때
-     * @return
-     */
-    @ExceptionHandler(CategoryNotFoundException.class)
-    protected ResponseEntity<ErrorResponse> handleCategoryNotFoundException(){
-        log.error("CategoryNotFoundException");
-        final ErrorResponse response = ErrorResponse.of(ErrorCode.CATEGORY_NOT_FOUND_ERROR);
-        return ResponseEntity.status(HttpStatus.OK).body(response);
-    }
-
-    /**
-     * 존재하지 않은 pk로 file select해서 빈값 넘어올 때
-     * @return
-     */
-    @ExceptionHandler(FileNotFoundException.class)
-    protected ResponseEntity<ErrorResponse> handleFileNotFoundException(){
-        log.error("FileNotFoundException");
-        final ErrorResponse response = ErrorResponse.of(ErrorCode.FILE_NOT_FOUND_ERROR);
-        return ResponseEntity.status(HttpStatus.OK).body(response);
-    }
-
-    /**
-     * board Input data 중 userName, content, title 의 길이가 정책의 규정에 맞지 않을 때
-     * @return
-     */
-    @ExceptionHandler(IllegalLengthException.class)
-    protected ResponseEntity<ErrorResponse> handleIllegalLengthException(){
-        log.error("IllegalLengthException");
-        final ErrorResponse response = ErrorResponse.of(ErrorCode.ILLEGAL_LENGTH_ERROR);
-        return ResponseEntity.status(HttpStatus.OK).body(response);
-    }
-
-    /**
-     * 필수 선택 영역인 category가 선택 안되어서 넘어올 때
-     * @return
-     */
-    @ExceptionHandler(NoSelectedException.class)
-    protected ResponseEntity<ErrorResponse> handleNoSelectedException(){
-        log.error("NoSelectedException");
-        final ErrorResponse response = ErrorResponse.of(ErrorCode.NO_SELECTED_ERROR);
-        return ResponseEntity.status(HttpStatus.OK).body(response);
-    }
-
-    /**
-     * password와 passwordCheck가 일치하지 않을 때
-     * @return
-     */
-    @ExceptionHandler(PasswordIncorrectException.class)
-    protected ResponseEntity<ErrorResponse> handlePasswordIncorrectException(){
-        log.error("PasswordIncorrectException");
-        final ErrorResponse response = ErrorResponse.of(ErrorCode.PASSWORD_INCORRECT_ERROR);
-        return ResponseEntity.status(HttpStatus.OK).body(response);
-    }
-
-    /**
-     * password가 정책 규정의 만족하지 못할 때
-     * @return
-     */
-    @ExceptionHandler(PasswordRegexException.class)
-    protected ResponseEntity<ErrorResponse> handlePasswordRegexException(){
-        log.error("PasswordRegexException");
-        final ErrorResponse response = ErrorResponse.of(ErrorCode.PASSWORD_REGEX_ERROR);
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
 
     /**
      * 예상 못한  Exception이 발생 시
-     * @return
+     *
+     * @return INTERNAL_SERVER_ERROR
      */
     @ExceptionHandler(Exception.class)
-    protected ResponseEntity<ErrorResponse> handleException(){
-        log.error("Exception");
-        final ErrorResponse response = ErrorResponse.of(ErrorCode.INTERNAL_SERVER_ERROR);
-        return ResponseEntity.status(HttpStatus.OK).body(response);
+    protected ResponseEntity handleException(Exception e) {
+        log.error("Exception occurred. message={}", e.getMessage(), e);
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
     }
 }
