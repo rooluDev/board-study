@@ -1,43 +1,49 @@
 package com.study.mapper;
 
 import com.study.dto.FileDto;
-import com.study.entity.File;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
-import java.util.Optional;
 
+/**
+ * FileDto mapper
+ */
 @Mapper
 public interface FileMapper {
     /**
-     * boardId로 files 찾기
-     * @param boardId
-     * @return
-     */
-    List<File> findByBoardId(Long boardId);
-
-    /**
      * File Create
-     * @param file
+     *
+     * @param file 저장할 파일
      */
-    int createFile(File file);
+    void insertFile(FileDto file);
 
     /**
-     * board의 파일 삭제
-     * @param boardId
+     * boardId로 fileList 찾기
+     *
+     * @param boardId board PK
+     * @return 게시물에 있는 첨부파일 리스트
      */
-    int deleteByBoardId(Long boardId);
+    List<FileDto> selectByBoardId(Long boardId);
 
     /**
      * pk로 파일 찾기
-     * @param fileId
-     * @return
+     *
+     * @param fileId pk
+     * @return 단일 파일
      */
-    Optional<File> findByFileId(Long fileId);
+    FileDto selectById(Long fileId);
 
     /**
-     * pk로 파일 삭제
-     * @param fileId
+     * boardId 일치하는 파일들 삭제
+     *
+     * @param boardId board PK
      */
-    int deleteById(Long fileId);
+    void deleteByBoardId(Long boardId);
+
+    /**
+     * pk로 파일 삭제하기
+     *
+     * @param fileId PK
+     */
+    void deleteById(Long fileId);
 }
