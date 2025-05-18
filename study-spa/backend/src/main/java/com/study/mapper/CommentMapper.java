@@ -1,33 +1,35 @@
 package com.study.mapper;
 
-import com.study.dto.CommentCreateFormDto;
 import com.study.dto.CommentDto;
-import com.study.entity.Comment;
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
+/**
+ * Comment DTO Mapper
+ */
 @Mapper
 public interface CommentMapper {
+
     /**
      * boardId로 댓글 가져오기
-     * @param boardId
-     * @return
-     */
-    List<Comment> findByBoardId(Long boardId);
-
-    /**
-     * 댓글 등록
      *
-     * @param commentCreateFormDto
+     * @param boardId board Pk
+     * @return 게시물에 있는 댓글 리스트
      */
-    int createComment(CommentCreateFormDto commentCreateFormDto);
+    List<CommentDto> selectByBoardId(Long boardId);
 
     /**
-     * boardId가 일치하는 댓글 삭제
-     * @param boardId
+     * 댓글 추가
+     *
+     * @param comment 저장 할 댓글
      */
-    int deleteByBoardId(Long boardId);
+    void insertComment(CommentDto comment);
 
+    /**
+     * board의 댓글 삭제
+     *
+     * @param boardId board pk
+     */
+    void deleteByBoardId(Long boardId);
 }
