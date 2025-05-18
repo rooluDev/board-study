@@ -2,80 +2,87 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
 <mapper namespace="com.study.mapper.BoardMapper">
-    <sql id="searchWhereQuery">
+    <sql id="boardSelectWhereQuery">
         WHERE
-            tb_board.created_at BETWEEN #{startDate} AND #{endDate}
-            <if test="searchText != null and searchText != ''">
-                AND (title LIKE CONCAT('%',#{searchText},'%')
-                OR user_name LIKE CONCAT('%',#{searchText},'%')
-                OR content LIKE CONCAT('%',#{searchText},'%')
-                )
-            </if>
-            <if test="categoryId > 0">
-                AND tb_board.category_id = #{categoryId}
-            </if>
+        tb_board.created_at BETWEEN #{startDateTimestamp} AND #{endDateTimestamp}
+        <if test='searchText != null and searchText != ""'>
+            AND (tb_board.title LIKE CONCAT('%',#{searchText},'%')
+            OR tb_board.content LIKE CONCAT('%',#{searchText},'%')
+            OR tb_board.user_name LIKE CONCAT('%',#{searchText},'%'))
+        </if>
+        <if test='categoryId > 0'>
+            AND tb_board.category_id = #{categoryId}
+        </if>
     </sql>
 
-    <select id="findById" parameterType="Long" resultType="com.study.dto.BoardDto">
+    <select id="selectBoardListByCondition" parameterType="com.study.condition.SearchCondition"
+            resultType="com.study.dto.BoardDto">
         SELECT
-            *
+        tb_board.*,tb_category.category_name,
+        (SELECT
+        file_id
         FROM
-            tb_board
-        LEFT JOIN
-            tb_category ON tb_board.category_id = tb_category.category_id
-        WHERE
-            board_id = #{boardId}
+        tb_file
+        WHERE tb_file.board_id = tb_board.board_id LIMIT 1) AS file_id
+        FROM
+        tb_board
+        JOIN
+        tb_category ON tb_board.category_id = tb_category.category_id
+        <include refid="boardSelectWhereQuery"></include>
+        ORDER BY tb_board.created_at DESC LIMIT #{pageSize} OFFSET #{startRow}
     </select>
 
-    <select id="getBoardList" parameterType="com.study.condition.BoardSelectCondition" resultType="com.study.dto.BoardDto">
-        SELECT DISTINCT
-            tb_category.category_name,tb_board.board_id, tb_board.title,
-            tb_board.user_name,tb_board.views,tb_board.created_at,
-            tb_board.edited_at, tb_file.board_id as boardIdInFile
-        FROM
-            tb_board
-        LEFT JOIN
-            tb_category ON tb_board.category_id = tb_category.category_id
-        LEFT JOIN
-            tb_file ON tb_board.board_id = tb_file.board_id
-        <include refid="searchWhereQuery"></include>
-        ORDER BY
-            tb_board.created_at DESC LIMIT #{pageSize} OFFSET #{startRow}
-    </select>
-
-    <select id="getBoardCount" parameterType="com.study.condition.BoardSelectCondition" resultType="Integer">
+    <select id="selectBoardCountByCondition" parameterType="com.study.condition.SearchCondition" resultType="Integer">
         SELECT
-            COUNT(*)
+        COUNT(*)
         FROM
-            tb_board
-        <include refid="searchWhereQuery"></include>
+        tb_board
+        <include refid="boardSelectWhereQuery"></include>
     </select>
 
-    <insert id="createBoard" parameterType="com.study.dto.BoardDto" useGeneratedKeys="true" keyProperty="boardId">
-        INSERT INTO
-            tb_board (category_id, title, content, user_name, password, created_at)
-        VALUES
-            (#{categoryId}, #{title}, #{content}, #{userName}, #{password}, current_timestamp)
+    <select id="selectById" parameterType="Long" resultType="com.study.dto.BoardDto">
+        SELECT *
+        FROM tb_board
+                 JOIN
+             tb_category ON tb_board.category_id = tb_category.category_id
+        WHERE board_id = #{boardId}
+    </select>
+
+    <insert id="insertBoard" parameterType="com.study.dto.BoardDto" useGeneratedKeys="true" keyProperty="boardId">
+        INSERT INTO tb_board (category_id, title, content, user_name, password)
+        VALUES (#{categoryId}, #{title}, #{content}, #{userName}, SHA2(#{password}, 256))
     </insert>
+
+
+    <update id="updateBoard" parameterType="com.study.dto.BoardDto">
+        UPDATE
+            tb_board
+        SET title     = #{title},
+            user_name = #{userName},
+            content   = #{content},
+            edited_at = current_timestamp
+        WHERE board_id = #{boardId}
+    </update>
 
     <update id="updateView" parameterType="Long">
         UPDATE
             tb_board
-        SET
-            views = views + 1
-        WHERE
-            board_id = #{boardId}
-    </update>
-
-    <update id="updateBoard" parameterType="com.study.dto.BoardDto">
-        UPDATE tb_board
-        SET title = #{title}, user_name = #{userName}, content = #{content}, edited_at = current_timestamp
+        SET views = views + 1
         WHERE board_id = #{boardId}
     </update>
 
     <delete id="deleteById" parameterType="Long">
-        DELETE FROM tb_board
+        DELETE
+        FROM tb_board
         WHERE board_id = #{boardId}
     </delete>
+
+    <select id="selectByIdAndPassword" parameterType="map" resultType="Integer">
+        SELECT COUNT(*)
+        FROM tb_board
+        WHERE board_id = #{boardId}
+          AND password = SHA2(#{enteredPassword}, 256)
+    </select>
 </mapper>
