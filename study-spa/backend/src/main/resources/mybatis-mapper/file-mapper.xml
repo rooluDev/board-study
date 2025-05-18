@@ -2,43 +2,35 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
 <mapper namespace="com.study.mapper.FileMapper">
-    <select id="findByBoardId" parameterType="Long" resultType="com.study.entity.File">
-        SELECT
-            *
-        FROM
-            tb_file
-        WHERE
-            board_id = #{boardId}
-    </select>
-
-    <select id="findByFileId" parameterType="Long" resultType="com.study.entity.File">
-        SELECT
-            *
-        FROM
-            tb_file
-        WHERE
-            file_id = #{fileId}
-    </select>
-
-    <insert id="createFile" parameterType="com.study.entity.File" useGeneratedKeys="true" keyProperty="fileId">
-        INSERT INTO
-            tb_file (board_id, original_name, physical_name, file_path, extension, size, created_at)
-        VALUES
-            (#{boardId}, #{originalName}, #{physicalName}, #{filePath}, #{extension}, #{size}, current_timestamp)
+    <insert id="insertFile" parameterType="com.study.dto.FileDto">
+        INSERT INTO tb_file (board_id, original_name, physical_name, file_path, extension, size)
+        VALUES (#{boardId}, #{originalName}, #{physicalName}, #{filePath}, #{extension}, #{size})
     </insert>
 
+    <select id="selectByBoardId" parameterType="Long" resultType="com.study.dto.FileDto">
+        SELECT *
+        FROM tb_file
+        WHERE board_id = #{boardId}
+    </select>
+
+    <select id="selectById" parameterType="Long" resultType="com.study.dto.FileDto">
+        SELECT *
+        FROM tb_file
+        WHERE file_id = #{fileId}
+    </select>
+
     <delete id="deleteByBoardId" parameterType="Long">
-        DELETE FROM
-                tb_file
-        WHERE
-            board_id = #{boardId}
+        DELETE
+        FROM tb_file
+        WHERE board_id = #{boardId}
     </delete>
 
     <delete id="deleteById" parameterType="Long">
-        DELETE FROM
-                tb_file
-        WHERE
-            file_id = #{fileId}
+        DELETE
+        FROM tb_file
+        WHERE file_id = #{fileId}
     </delete>
+
 </mapper>
