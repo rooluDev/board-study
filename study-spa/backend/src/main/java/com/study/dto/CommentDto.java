@@ -15,6 +15,8 @@ import java.sql.Timestamp;
 @Builder
 public class CommentDto {
     private Long commentId;
+    private Long boardId;
     private String comment;
     private Timestamp createdAt;
+    private Timestamp editedAt;
 }
