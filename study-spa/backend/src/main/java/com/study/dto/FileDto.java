@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.sql.Timestamp;
+
 /**
  * FileDTO
  */
@@ -14,8 +16,10 @@ public class FileDto {
     private Long fileId;
     private Long boardId;
     private String originalName;
-    private String physicalName; // downloadFile() 내부에서 사용할 멤버변수
-    private String filePath; // downloadFile() 내부에서 사용할 멤버변수
-    private String extension; // downloadFile() 내부에서 사용할 멤버변수
+    private String physicalName;
+    private String filePath;
+    private String extension;
     private Long size;
+    private Timestamp createdAt;
+    private Timestamp editedAt;
 }
