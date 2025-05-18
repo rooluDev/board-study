@@ -1,12 +1,8 @@
 package com.study.controller;
 
-import com.study.dto.CommentCreateFormDto;
 import com.study.dto.CommentDto;
-import com.study.exception.common.success.ApiResponse;
-import com.study.exception.common.success.SuccessCode;
 import com.study.service.CommentService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,33 +12,39 @@ import java.util.List;
  * comment rest api controller
  */
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api")
 public class CommentController {
+
     private final CommentService commentService;
 
-    @Autowired
-    public CommentController(CommentService commentService) {
-        this.commentService = commentService;
-    }
-
     /**
-     * 게시물에 등록된 댓글들 요청
+     * 게시물에 등록된 댓글 리스트
      *
-     * @param boardId
-     * @return
+     * @param boardId pk
+     * @return {
+     *     commentList : []
+     * }
      */
-    @GetMapping("/comment/{boardId}")
-    public ApiResponse<List<CommentDto>> getCommentList(@PathVariable Long boardId) {
-        return new ApiResponse(commentService.getComments(boardId), SuccessCode.SELECT_SUCCESS);
+    @GetMapping("/comments/{boardId}")
+    public ResponseEntity<List<CommentDto>> getCommentList(@PathVariable(name = "boardId") Long boardId) {
+
+        List<CommentDto> commentList = commentService.getCommentList(boardId);
+
+        return ResponseEntity.ok().body(commentList);
     }
 
     /**
      * 댓글 등록
-     * @param commentCreateFormDto
+     *
+     * @param commentDto 추가할 댓글 리스트
+     * @return null
      */
     @PostMapping("/comment")
-    public ApiResponse<String> registerComment(@RequestBody CommentCreateFormDto commentCreateFormDto){
-        commentService.addComment(commentCreateFormDto);
-        return new ApiResponse("success",SuccessCode.INSERT_SUCCESS);
+    public ResponseEntity registerComment(@RequestBody CommentDto commentDto) {
+
+        commentService.createComment(commentDto);
+
+        return ResponseEntity.ok().body(null);
     }
 }
