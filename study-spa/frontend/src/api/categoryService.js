@@ -1,10 +1,12 @@
-import axios from 'axios';
+import { api } from '@/api/apiConfig';
 
 /**
  * GET /api/categories
- * @returns {Promise<*>}
+ * 카테고리 리스트 가져오기
+ *
+ * @returns {Promise<any>}
  */
-export async function getCategoryList() {
-  const res = await axios.get(`/api/categories`);
-  return res.data.body;
-}
+export const fetchGetCategoryList = async () => {
+  const res = await api.get(`/categories`);
+  return res.data;
+};

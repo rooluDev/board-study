@@ -1,101 +1,100 @@
-import axios from 'axios';
+import { api } from '@/api/apiConfig';
+import { parseToQueryString } from '@/pages/utils/utils';
 
-// TODO : namespace
 /**
- * GET /api/boards/param=
+ * GET /api/boards
+ * 검색조건으로 게시물 리스트 가져오기
  *
- * @param searchCondition
- * @param pageSize
- * @returns {Promise<*>}
+ * @param searchCondition 검색조건
+ * @returns {Promise<any>}
  */
-export async function getBoardList(searchCondition, pageSize) {
-  const res = await axios.get(
-    `/api/boards?startDate=${searchCondition.startDate}&endDate=${searchCondition.endDate}&searchText=${searchCondition.searchText}&categoryId=${searchCondition.categoryId}&pageNum=${searchCondition.pageNum}&pageSize=${pageSize}`,
-  );
-  return res.data.body;
-}
+export const fetchGetBoardList = async (searchCondition) => {
+  const queryString = parseToQueryString(searchCondition);
+  const res = await api.get(`/boards${queryString}`);
+
+  return res.data;
+};
 
 /**
  * GET /api/board/boardId
+ * 단일 게시판 데이터 가져오기
  *
- * @param boardId
- * @param option
+ * @param boardId pk
  * @returns {Promise<*>}
  */
-export async function getBoard(boardId, option) {
-  const res = await axios.get(`/api/board/${boardId}?option=${option}`);
+export const fetchGetBoard = async (boardId) => {
+  const res = await api.get(`/board/${boardId}`);
 
   if (res.data.errorCode) {
     throw new Error();
   }
-  return res.data.body;
-}
+  return res.data;
+};
 
 /**
  * POST /api/board
+ * 게시판 추가
  *
- * @param boardFormData
+ * @param formData formData
  * @returns {Promise<void>}
  */
-export async function uploadBoard(boardFormData) {
-  const formData = new FormData();
-  // 파일 부분 설정
-  boardFormData.files.forEach((file) => {
-    formData.append('files', file);
-  });
-  // text 부분 설정
-  formData.append('categoryId', boardFormData.selectedCategoryId);
-  formData.append('userName', boardFormData.userName);
-  formData.append('password', boardFormData.password);
-  formData.append('passwordCheck', boardFormData.passwordCheck);
-  formData.append('title', boardFormData.title);
-  formData.append('content', boardFormData.content);
-
-  await axios.post(`/api/board`, formData, {
+export const fetchPostBoard = async (formData) => {
+  await api.post(`/board`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
   });
-}
-
-/**
- * POST /api/board/check-password
- *
- * @param boardId
- * @param password
- * @returns {Promise<*>}
- */
-export async function checkPassword(boardId, password) {
-  const res = await axios.post(`/api/board/check-password`, {
-    boardId: boardId,
-    password: password,
-  });
-  return res;
-}
-
-/**
- * DELETE /api/board/boardId
- *
- * @param boardId
- * @returns {Promise<any>}
- */
-export async function deleteBoard(boardId) {
-  const res = await axios.delete(`/api/board/${boardId}`);
-  return res.data.body;
-}
+};
 
 /**
  * PUT /api/board/boardId
+ * 게시판 수정
  *
- * @param board
- * @returns {Promise<*>}
+ * @param boardId pk
+ * @param formData formData
+ * @returns {Promise<void>}
  */
-export async function updateBoard(board, inputPassword) {
-  const res = await axios.put(`/api/board/${board.boardId}`, {
-    userName: board.userName,
-    title: board.title,
-    content: board.content,
-    passwordCheck: inputPassword,
+export const fetchEditBoard = async (boardId, formData) => {
+  await api.put(`/board/${boardId}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
   });
-  return res.data;
-}
+};
+
+/**
+ * PATCH /api/board/boardId/increase-view
+ * 조회수 1 증가
+ *
+ * @param boardId pk
+ * @returns {Promise<void>}
+ */
+export const fetchAddView = async (boardId) => {
+  await api.patch(`/board/${boardId}/increase-view`);
+};
+
+/**
+ * DELETE /api/board/boardId
+ * 게시물 삭제
+ *
+ * @param boardId pk
+ * @returns {Promise<void>}
+ */
+export const fetchDeleteBoard = async (boardId) => {
+  await api.delete(`/board/${boardId}`);
+};
+
+/**
+ * POST /api/password-check
+ * 비밀번호 확인
+ *
+ * @param formData formData (boardId, enteredPassword)
+ * @returns {Promise<void>}
+ */
+export const fetchCheckPassword = async (formData) => {
+  await api.post(`/board/password-check`, formData, {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+  });
+};

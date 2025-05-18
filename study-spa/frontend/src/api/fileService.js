@@ -1,36 +1,16 @@
-import axios from 'axios';
+import { api } from '@/api/apiConfig';
 
 /**
  * GET /api/file/fileId/download
+ * 파일 리소스 가져오기
  *
- * @param fileId
+ * @param fileId pk
  * @returns {Promise<any>}
  */
-export async function downloadFile(fileId) {
-  const res = await axios.get(`/api/file/${fileId}/download`, {
+export const fetchGetFileResource = async (fileId) => {
+  const res = await api.get(`file/${fileId}/download`, {
     responseType: 'blob',
   });
+
   return res.data;
-}
-
-/**
- * GET /api/files/boardId
- *
- * @param boardId
- * @returns {Promise<*>}
- */
-export async function getFileList(boardId) {
-  const res = await axios.get(`/api/files/${boardId}`);
-  return res.data.body;
-}
-
-/**
- * DELETE /api/file/fileId
- *
- * @param fileId
- * @returns {Promise<*>}
- */
-export async function deleteFile(fileId) {
-  const res = await axios.delete(`/api/file/${fileId}`);
-  return res.data.body;
-}
+};
