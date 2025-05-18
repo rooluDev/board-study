@@ -1,52 +1,47 @@
 package com.study.service;
 
-import com.study.dto.CommentCreateFormDto;
 import com.study.dto.CommentDto;
-import com.study.entity.Comment;
 import com.study.mapper.CommentMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
- * 댓글 관련 비지니스 로직
+ * Comment 서비스
  */
 @Service
+@RequiredArgsConstructor
 public class CommentService {
+
     private final CommentMapper commentMapper;
 
-    @Autowired
-    public CommentService(CommentMapper commentMapper){
-        this.commentMapper = commentMapper;
+    /**
+     * 게시물에 있느 댓글 리스트 가져오기
+     *
+     * @param boardId board PK
+     * @return 게시물에 있는 댓글 리스트
+     */
+    public List<CommentDto> getCommentList(Long boardId) {
+        return commentMapper.selectByBoardId(boardId);
     }
 
     /**
-     * 댓글 가져오기
-     * @param boardId
-     * @return
+     * 댓글 생성
+     *
+     * @param comment 저장할 댓글
      */
-    public List<CommentDto> getComments(Long boardId){
-        // Entity -> DTO
-        List<CommentDto> commentDtoList = commentMapper.findByBoardId(boardId).stream()
-                .map(entity -> entity.toCommentDto())
-                .collect(Collectors.toList());
-        return commentDtoList;
+    public void createComment(CommentDto comment){
+        commentMapper.insertComment(comment);
     }
 
     /**
-     * 댓글 등록
-     * @param commentCreateFormDto
+     * 게시물에 있는 댓글 리스트 삭제
+     *
+     * @param boardId pk
      */
-    public int addComment(CommentCreateFormDto commentCreateFormDto){
-        return commentMapper.createComment(commentCreateFormDto);
+    public void deleteCommentListByBoardId(Long boardId){
+        commentMapper.deleteByBoardId(boardId);
     }
 
-    /**
-     * 댓글 모두 삭제
-     */
-    public int deleteByBoardId(Long boardId){
-        return commentMapper.deleteByBoardId(boardId);
-    }
 }
