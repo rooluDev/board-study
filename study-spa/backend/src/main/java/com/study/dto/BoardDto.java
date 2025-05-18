@@ -4,14 +4,15 @@ import lombok.*;
 
 import java.sql.Timestamp;
 
+
 /**
  * BoardDTO
  */
 @Getter
 @Setter
-@AllArgsConstructor
-@NoArgsConstructor
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class BoardDto {
     private Long boardId;
     private Long categoryId;
@@ -22,6 +23,9 @@ public class BoardDto {
     private String content;
     private String userName;
     private String password;
-    private String categoryName; // 게시판 - 목록에 필요한 카테고리 이름 변수
-    private Long boardIdInFile; // 게시판 - 목록에 필요한 파일 여부를 위한 변수
+    private String passwordRe;
+    // Join 연산 시 메인 페이지 카테고리를 위한 추가 멤버변수
+    private String categoryName;
+    // Join 연산 시 메인 페이지 파일 여부를 위한 추가 멤버변수
+    private Long fileId;
 }
