@@ -1,199 +1,198 @@
 package com.study.controller;
 
-import com.study.condition.BoardSelectCondition;
+import com.study.condition.SearchCondition;
 import com.study.dto.*;
-import com.study.exception.PasswordIncorrectException;
-import com.study.exception.common.success.ApiResponse;
-import com.study.exception.common.success.SuccessCode;
 import com.study.service.BoardService;
 import com.study.service.CommentService;
 import com.study.service.FileService;
-import com.study.utils.EncryptUtils;
-import com.study.utils.StringUtils;
-import com.study.validate.Validator;
+import com.study.validate.BoardValidator;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
 /**
  * board rest api controller
  */
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api")
 @Slf4j
 public class BoardController {
+
     private final BoardService boardService;
     private final FileService fileService;
     private final CommentService commentService;
 
-    @Autowired
-    public BoardController(BoardService boardService, FileService fileService, CommentService commentService) {
-        this.boardService = boardService;
-        this.fileService = fileService;
-        this.commentService = commentService;
-    }
 
     /**
-     * 검색 조건에 따른 게시물 리스트 요청
+     * 게시판 리스트 페이지에 필요한 데이터
      *
-     * @param boardSearchFormDto
-     * @return
+     * @param searchCondition 검색조건
+     * @return {
+     * boardList : []
+     * totalPageNum : 0
+     * }
      */
     @GetMapping("/boards")
-    public ApiResponse<BoardListDtoForListPage> getBoardList(@ModelAttribute BoardSearchFormDto boardSearchFormDto) {
-        // TODO : 따로 함수화
-        // /boards/free/list no param
-        if (StringUtils.isBoardFormNull(boardSearchFormDto)) {
-            String startDate = LocalDate.now().minusYears(1).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-            String endDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-            boardSearchFormDto = new BoardSearchFormDto(startDate, endDate, -1L, "", 1, 10);
-        }
+    public ResponseEntity<Map<String, Object>> getBoardList(@ModelAttribute SearchCondition searchCondition) {
 
-        // DB SELECT OFFSET Setting
-        int startRow = (boardSearchFormDto.getPageNum() - 1) * boardSearchFormDto.getPageSize();
+        List<BoardDto> boardList = boardService.getBoardListByCondition(searchCondition);
+        int boardCount = boardService.getBoardCountByCondition(searchCondition);
 
-        // boardSelectCondition 설정
-        // 만든 이유 : dto에는 로직이 없어야한다. 받아온 String 값을 Timestamp로 변경이 불가 -> 맞는지
-        // String -> Timestamp : startDate = 00:00:00, endDate = 23:59:59
-        BoardSelectCondition boardSelectCondition = BoardSelectCondition.builder()
-                .startDate(StringUtils.parseToTimestampStart(boardSearchFormDto.getStartDate()))
-                .endDate(StringUtils.parseToTimestampEnd(boardSearchFormDto.getEndDate()))
-                .categoryId(boardSearchFormDto.getCategoryId())
-                .searchText(boardSearchFormDto.getSearchText())
-                .pageSize(boardSearchFormDto.getPageSize())
-                .startRow(startRow)
-                .build();
+        Map<String, Object> response = new HashMap<>();
+        response.put("boardList", boardList);
+        response.put("boardCount", boardCount);
 
-        // 응답 Dto 설정
-        BoardListDtoForListPage boardListDTOForListPage = BoardListDtoForListPage.builder()
-                .searchCondition(boardSearchFormDto)
-                .boardList(boardService.getBoardList(boardSelectCondition))
-                .totalCount(boardService.getBoardCount(boardSelectCondition))
-                .build();
-
-        return new ApiResponse(boardListDTOForListPage, SuccessCode.SELECT_SUCCESS);
+        return ResponseEntity.ok().body(response);
     }
 
     /**
-     * 게시물 요청
+     * 게시판 보기 페이지 및 수정 페이지에 필요한 데이터
      *
-     * @param boardId
-     * @param option
-     * @return
+     * @param boardId pk
+     * @return {
+     * board :{},
+     * fileList : [],
+     * commentList : []
+     * }
      */
     @GetMapping("/board/{boardId}")
-    public ApiResponse<BoardDto> getBoard(@PathVariable Long boardId, @RequestParam String option) throws Exception {
+    public ResponseEntity<Map<String, Object>> getBoard(@PathVariable(name = "boardId") Long boardId) {
         // 필요한 정보 요청
-        BoardDto boardDTO = boardService.findBoard(boardId);
-        // 조회수 증가 - 보기 페이지
-        // TODO : 따로
-        if (option.equals("view")) {
-            boardService.increaseView(boardId);
+        BoardDto boardDTO = boardService.getBoard(boardId);
+        if (boardDTO == null) {
+            throw new NoSuchElementException();
         }
-        return new ApiResponse(boardDTO, SuccessCode.SELECT_SUCCESS);
+
+        List<FileDto> fileList = fileService.getFileListByBoardId(boardId);
+        List<CommentDto> commentList = commentService.getCommentList(boardId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("board", boardDTO);
+        response.put("fileList", fileList);
+        response.put("commentList", commentList);
+
+        return ResponseEntity.ok().body(response);
     }
 
     /**
-     * 게시물 생성
+     * 게시물 추가
      *
-     * @param boardCreateFormDto
-     * @return
-     * @throws Exception
+     * @param boardDto 추가할 게시물 데이터
+     * @param fileList 추가할 파일 리스트
+     * @return null
      */
     @PostMapping("/board")
-    public ApiResponse<String> uploadBoard(@ModelAttribute BoardCreateFormDto boardCreateFormDto) throws Exception {
-        // 저장할 Board DTO 생성
-        BoardDto boardDTO = BoardDto.builder()
-                .categoryId(boardCreateFormDto.getCategoryId())
-                .userName(boardCreateFormDto.getUserName())
-                .password(boardCreateFormDto.getPassword())
-                .title(boardCreateFormDto.getTitle())
-                .content(boardCreateFormDto.getContent())
-                .build();
+    public ResponseEntity postBoard(@ModelAttribute BoardDto boardDto,
+                                    @RequestPart(name = "file", required = false) List<MultipartFile> fileList) throws IOException {
+
 
         // 유효성 검사
-        Validator.validateBoardInput(boardDTO, boardCreateFormDto.getPasswordCheck());
-
-        // 비밀번호 암호화
-        boardDTO.setPassword(EncryptUtils.encryptPassword(boardDTO.getPassword()));
+        if (!BoardValidator.validateBoardForPost(boardDto)) {
+            throw new IllegalStateException();
+        }
 
         // DB에 board 저장
-        boardService.addBoard(boardDTO);
+        Long boardId = boardService.postBoard(boardDto);
 
         // File 저장
-        // TODO : multipart null check
+        if (fileList != null && !fileList.isEmpty()) {
+            fileService.addFile(fileList, boardId);
+        }
 
-        fileService.addFile(boardCreateFormDto.getFiles(), boardDTO.getBoardId());
-
-        return new ApiResponse(boardDTO, SuccessCode.INSERT_SUCCESS);
+        return ResponseEntity.ok().body(null);
     }
 
     /**
-     * 비밀번호 확인
+     * 게시물 수정
      *
-     * @param passwordCheckDto
-     * @return
-     * @throws Exception
+     * @param boardId          pk
+     * @param boardDto         수정할 게시물 데이터
+     * @param fileList         추가할 파일
+     * @param deleteFileIdList 삭제할 파일의 pk 리스트
+     * @return null
      */
-    // /board/id/check-password -> 객체 생성시 멤버변수 password 하나 -> id와 password로 바꿈
-    @PostMapping("/board/check-password")
-    public ApiResponse<String> checkPassword(@RequestBody PasswordCheckDto passwordCheckDto) {
-        // boardId로 비밀번호 가져오기
-        BoardDto boardDTO = boardService.findBoard(passwordCheckDto.getBoardId());
-        // TODO : NPE
-        // 비밀번호 확인
-        String password = EncryptUtils.encryptPassword(passwordCheckDto.getPassword());
-        if (!boardDTO.getPassword().equals(password)) {
-            throw new PasswordIncorrectException();
+    @PutMapping("/board/{boardId}")
+    public ResponseEntity updateBoard(@PathVariable(name = "boardId") Long boardId,
+                                      @ModelAttribute BoardDto boardDto,
+                                      @RequestPart(name = "file", required = false) List<MultipartFile> fileList,
+                                      @RequestPart(name = "deleteFileIdList", required = false) List<Long> deleteFileIdList) {
+
+        if (!BoardValidator.validateBoardForEdit(boardDto)) {
+            throw new IllegalStateException();
         }
-        return new ApiResponse("success", SuccessCode.VERIFICATION_SUCCESS);
+        boardDto.setBoardId(boardId);
+        boardService.editBoard(boardDto);
+
+        if (deleteFileIdList != null && !deleteFileIdList.isEmpty()) {
+            deleteFileIdList.forEach(fileService::deleteById);
+        }
+
+        if (fileList != null && !fileList.isEmpty()) {
+            try {
+                fileService.addFile(fileList, boardId);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        return ResponseEntity.ok().body(null);
+    }
+
+    /**
+     * 게시물 조회수 증가
+     *
+     * @param boardId pk
+     * @return null
+     */
+    @PatchMapping("/board/{boardId}/increase-view")
+    public ResponseEntity increaseView(@PathVariable(name = "boardId") Long boardId) {
+
+        boardService.increaseView(boardId);
+
+        return ResponseEntity.ok().body(null);
     }
 
     /**
      * 게시물 삭제
      *
-     * @param boardId
-     * @return
+     * @param boardId pathVariable
+     * @return null
      */
     @DeleteMapping("/board/{boardId}")
-    public ApiResponse<String> deleteBoard(@PathVariable Long boardId) {
-        // delete에는 body가 없다 -> password를 param으로 넘겨야하는데 비밀번호 유출의 위험 -> ??
-        // header
-        // TODO : header
-        commentService.deleteByBoardId(boardId);
-        fileService.deleteFilesByBoardId(boardId);
-        boardService.deleteBoardById(boardId);
+    public ResponseEntity deleteBoard(@PathVariable Long boardId) {
+        commentService.deleteCommentListByBoardId(boardId);
+        fileService.deleteFileListByBoardId(boardId);
+        boardService.deleteBoard(boardId);
 
-        return new ApiResponse("success", SuccessCode.DELETE_SUCCESS);
+        return ResponseEntity.ok().body(null);
     }
 
     /**
-     * 게시물 업데이트
+     * 비밀번호 확인
      *
-     * @param boardId
-     * @param boardUpdateFormDto
-     * @return
+     * @param boardId         pk
+     * @param enteredPassword 입력한 비밀번호
+     * @return ResponseEntity
      */
-    @PutMapping("/board/{boardId}")
-    public ApiResponse<String> updateBoard(@PathVariable Long boardId, @RequestBody BoardUpdateFormDto boardUpdateFormDto) throws Exception {
-        // boardId 확인
-        String password = boardService.findBoard(boardId).getPassword();
-        // 유효성 검증
-        Validator.validateUpdateBoardInput(boardUpdateFormDto, password);
-        // boardDTO 설정
-        BoardDto board = BoardDto.builder()
-                .boardId(boardId)
-                .userName(boardUpdateFormDto.getUserName())
-                .title(boardUpdateFormDto.getTitle())
-                .content(boardUpdateFormDto.getContent())
-                .build();
+    @PostMapping(value = {"/board/password-check"})
+    public ResponseEntity checkPassword(@RequestParam(name = "boardId") Long boardId, @RequestParam(name = "enteredPassword") String enteredPassword){
 
-        // 업데이트
-        boardService.updateBoard(board);
+        // 비밀번호 불일치
+        if (!boardService.findByIdAndPassword(boardId, enteredPassword)) {
+            throw new BadCredentialsException("비밀번호가 일치하지 않음");
+        }
 
-        return new ApiResponse("success", SuccessCode.UPDATE_SUCCESS);
+        //비밀번호 일치
+        return ResponseEntity.ok().build();
     }
 }
