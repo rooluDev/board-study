@@ -1,92 +1,97 @@
 package com.study.service;
 
-import com.study.condition.BoardSelectCondition;
+import com.study.condition.SearchCondition;
 import com.study.dto.BoardDto;
-import com.study.exception.BoardNotFoundException;
 import com.study.mapper.BoardMapper;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
- * 게시물 관련 비지니스 로직
+ * 보드 서비스
  */
 @Service
+@RequiredArgsConstructor
 public class BoardService {
+
     private final BoardMapper boardMapper;
 
-    @Autowired
-    public BoardService(BoardMapper boardMapper) {
-        this.boardMapper = boardMapper;
+    /**
+     * 조건에 맞는 게시물 리스트
+     *
+     * @param searchCondition 검색조건
+     * @return 게시물 리스트
+     */
+    public List<BoardDto> getBoardListByCondition(SearchCondition searchCondition) {
+        return boardMapper.selectBoardListByCondition(searchCondition);
     }
 
     /**
-     * 게시물 with Category Name 찾기
+     * 조건에 맞는 게시물 수
      *
-     * @param boardId
-     * @return
+     * @param searchCondition 검색조건
+     * @return 게시물 수
      */
-    public BoardDto findBoard(long boardId) throws BoardNotFoundException {
-        return boardMapper.findById(boardId).orElseThrow(() -> new BoardNotFoundException());
+    public int getBoardCountByCondition(SearchCondition searchCondition) {
+        return boardMapper.selectBoardCountByCondition(searchCondition);
     }
 
     /**
-     * 검색조건에 따라 게시물 with CategoryName List 찾기
+     * boardId로 BoardDto 찾기
      *
-     * @param boardSelectCondition
-     * @return
+     * @param boardId pk
+     * @return 게시물
      */
-    public List<BoardDto> getBoardList(BoardSelectCondition boardSelectCondition) {
-        List<BoardDto> boardCategoryFileDtoList = boardMapper.getBoardList(boardSelectCondition);
-        return boardCategoryFileDtoList;
+    public BoardDto getBoard(Long boardId) {
+        return boardMapper.selectById(boardId);
     }
 
     /**
-     * 검색조건에 따라 게시물 총 수
+     * 추가
      *
-     * @param boardSelectCondition
-     * @return
+     * @param board 추가할 게시물 데이터
      */
-    public int getBoardCount(BoardSelectCondition boardSelectCondition) {
-        return boardMapper.getBoardCount(boardSelectCondition);
+    public Long postBoard(BoardDto board) {
+        boardMapper.insertBoard(board);
+        return board.getBoardId();
     }
 
     /**
-     * 게시물 추가
+     * board 수정
      *
-     * @param board
-     * @return
+     * @param board 수정할 게시물 데이터
      */
-    public int addBoard(BoardDto board) {
-        return boardMapper.createBoard(board);
+    public void editBoard(BoardDto board) {
+        boardMapper.updateBoard(board);
     }
 
     /**
-     * 게시물 조회수 증가
+     * boardId와 입력한 pw와 일치하는 지 확인
      *
-     * @param boardId
+     * @param boardId         pk
+     * @param enteredPassword 입력한 비밀번호
+     * @return count
      */
-    public int increaseView(Long boardId) {
-        return boardMapper.updateView(boardId);
+    public boolean findByIdAndPassword(Long boardId, String enteredPassword) {
+        return boardMapper.selectByIdAndPassword(boardId, enteredPassword) == 1;
+    }
+
+    /**
+     * 조회수 증가
+     *
+     * @param boardId pk
+     */
+    public void increaseView(Long boardId) {
+        boardMapper.updateView(boardId);
     }
 
     /**
      * 게시물 삭제
      *
-     * @param boardId
+     * @param boardId pk
      */
-    public int deleteBoardById(Long boardId) {
-        return boardMapper.deleteById(boardId);
-    }
-
-    /**
-     * 게시물 수정
-     *
-     * @param board
-     */
-    public int updateBoard(BoardDto board) {
-        return boardMapper.updateBoard(board);
+    public void deleteBoard(Long boardId) {
+        boardMapper.deleteById(boardId);
     }
 }
