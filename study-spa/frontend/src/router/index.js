@@ -1,30 +1,30 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import List from '@/pages/boards/free/list/ListBoard.vue';
-import Write from '@/pages/board/free/write/WriteBoard.vue';
-import Modify from '@/pages/board/free/modify/ModifyBoard.vue';
-import View from '@/pages/boards/free/view/ViewBoard.vue';
+import List from '@/pages/board/list/ListBoard.vue';
+import Post from '@/pages/board/post/PostBoard.vue';
+import Edit from '@/pages/board/edit/EditBoard.vue';
+import View from '@/pages/board/view/ViewBoard.vue';
 import Error from '@/pages/error/Error.vue';
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
-      path: '/boards/free/list',
+      path: '/board/list',
       name: 'List',
       component: List,
     },
     {
-      path: '/board/free/write',
-      name: 'Write',
-      component: Write,
+      path: '/board/post',
+      name: 'Post',
+      component: Post,
     },
     {
-      path: '/board/free/modify',
-      name: 'Modify',
-      component: Modify,
+      path: '/board/edit/:id',
+      name: 'Edit',
+      component: Edit,
     },
     {
-      path: '/boards/free/view/:id',
+      path: '/board/view/:id',
       name: 'View',
       component: View,
     },
