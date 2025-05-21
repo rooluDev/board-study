@@ -6,6 +6,17 @@
 ## 💻 게시판 구조
 <img width="932" alt="스크린샷 2025-05-20 오후 3 59 16" src="https://github.com/user-attachments/assets/32fe2c6f-d1a2-45ba-a5a2-fd3866853edb" />
 
+## 📺 화면
+  + **메인 페이지 및 검색**
+
+  + **추가 페이지 및 추가**
+
+  + **보기 페이지 및 댓글 등록**
+
+  + **보기 페이지 및 삭제**
+
+  + **수정 페이지 및 수정**
+
 
 ## 🔗 모델 별 READ.ME 링크
 + **[Model1 (JSP)](https://github.com/rooluDev/board-study/tree/main/study-model1)**
