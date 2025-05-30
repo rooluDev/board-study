@@ -1,12 +1,56 @@
-# 📋 Medel1
+# 📋 Medel 1
 
 ## 📝 프로젝트 개요
-이 프로젝트는 게시판 포털 사이트를 구축하는 것을 목표로 합니다. 
+이 프로젝트는 게시판을 Model1(JSP)구조를 활용해 구축하는 것을 목표로 합니다.
 
-게시판의 종류로는 자유 게시판, 문의 게시판, 갤러리 게시판과 공지사항 총 4개의 게시판으로 구성되어 있습니다.
+게시판의 주 기능인 글 작성, 수정, 삭제 등 을 구현했습니다.
 
-서버를 2개를 두어 사용자 페이지와 관리자 페이지를 나누어 제작했습니다.
-
-사용자 페이지는 SPA(Single Page Application)로 SpringBoot와 Vue.js를 통해 제작했으며. 반면, 관리자 페이지는 MPA(Multi Page Application)로 SpringBoot와 Thymeleaf를 통해 제작했습니다.
-
-## 💻 게시판 구조
+## 💡 주요 기능
++ 게시판 작성
+  <details>
+   <summary>코드 보기(펼치기/접기)</summary>
+  
+    add.jsp
+     ```
+      
+    
+     ```
+     [add.jsp 전체코드]()
+  
++ 게시판 수정
+  <details>
+   <summary>코드 보기(펼치기/접기)</summary>
+  
+    edit.jsp
+     ```
+      
+    
+     ```
+     [add.jsp 전체코드]()
+  
++ 게시판 삭제
+  <details>
+   <summary>코드 보기(펼치기/접기)</summary>
+  
+    add.jsp
+     ```
+      
+    
+     ```
+     [add.jsp 전체코드]()
+  
++ 게시판 검색
+  <details>
+   <summary>코드 보기(펼치기/접기)</summary>
+  
+    add.jsp
+     ```
+      
+    
+     ```
+     [add.jsp 전체코드]()
+## 🛠 기술 스택
+![Java](https://img.shields.io/badge/Java-E76F00?style=for-the-badge&logo=java&logoColor=white)
+![JSP](https://img.shields.io/badge/JSP-F57C00?style=for-the-badge)
+![MyBatis](https://img.shields.io/badge/MyBatis-555555?style=for-the-badge&logo=MyBatis&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-00618A?style=for-the-badge&logo=mysql&logoColor=white)
