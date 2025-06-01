@@ -1,18 +1,18 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="java.util.List" %>
 <%@ page import="com.study.dto.Board" %>
-<%@ page import="com.study.service.BoardService" %>
 <%@ page import="com.study.condition.SearchCondition" %>
 <%@ page import="com.study.utils.ConditionUtils" %>
-<%@ page import="com.study.service.CategoryService" %>
 <%@ page import="com.study.dto.Category" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="com.study.utils.TimestampUtils" %>
+<%@ page import="com.study.repository.BoardRepository" %>
+<%@ page import="com.study.repository.CategoryRepository" %>
 <%
-    BoardService boardService = new BoardService();
-    CategoryService categoryService = new CategoryService();
+    BoardRepository boardRepository = BoardRepository.getInstance();
+    CategoryRepository categoryRepository = CategoryRepository.getInstance();
 
-    List<Category> categoryList = categoryService.getCategoryList();
+    List<Category> categoryList = categoryRepository.getCategoryList();
     List<Board> boardList = new ArrayList<>();
 
     String startDate = request.getParameter("startDate");
@@ -22,9 +22,9 @@
     String pageNum = request.getParameter("pageNum");
 
     SearchCondition searchCondition = ConditionUtils.parameterToSearchCondition(startDate, endDate, categoryId, searchText, pageNum);
-    boardList = boardService.getBoardListForMain(searchCondition);
+    boardList = boardRepository.selectBoardList(searchCondition);
 
-    int boardCount = boardService.getBoardCountForMain(searchCondition);
+    int boardCount = boardRepository.selectRowCountForBoardList(searchCondition);
     int pageSize = 10;
     int totalPageNum = (int) Math.ceil((double) boardCount / pageSize);
 %>

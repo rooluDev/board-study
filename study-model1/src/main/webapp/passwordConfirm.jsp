@@ -1,4 +1,4 @@
-<%@ page import="com.study.service.BoardService" %>
+<%@ page import="com.study.repository.BoardRepository" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%
     String inputPassword = request.getParameter("inputPassword");
@@ -10,9 +10,9 @@
     String searchText = request.getParameter("searchText");
     String pageNum = request.getParameter("pageNum");
 
-    BoardService boardService = new BoardService();
+    BoardRepository boardRepository = BoardRepository.getInstance();
 
-    boolean isExist = boardService.findBoardByPasswordAndId(boardId, inputPassword);
+    boolean isExist = boardRepository.selectBoardByPassword(boardId, inputPassword) == 1;
 
     if (isExist) {
         response.sendRedirect(location + "?boardId=" + boardId + "&startDate=" + startDate + "&endDate=" + endDate +

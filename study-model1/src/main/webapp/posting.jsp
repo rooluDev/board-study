@@ -1,10 +1,11 @@
-<%@ page import="com.study.service.CategoryService" %>
 <%@ page import="java.util.List" %>
 <%@ page import="com.study.dto.Category" %>
+<%@ page import="com.study.repository.CategoryRepository" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%
-    CategoryService categoryService = new CategoryService();
-    List<Category> categoryList = categoryService.getCategoryList();
+    CategoryRepository categoryRepository = CategoryRepository.getInstance();
+    List<Category> categoryList = categoryRepository.getCategoryList();
+
     String startDate = request.getParameter("startDate");
     String endDate = request.getParameter("endDate");
     String categoryId = request.getParameter("categoryId");

@@ -1,5 +1,5 @@
-<%@ page import="com.study.service.CommentService" %>
 <%@ page import="com.study.dto.Comment" %>
+<%@ page import="com.study.repository.CommentRepository" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 
 <%
@@ -11,14 +11,14 @@
     int boardId = Integer.parseInt(request.getParameter("boardId"));
     int pageNum = Integer.parseInt(request.getParameter("pageNum"));
 
-    CommentService commentService = new CommentService();
+    CommentRepository commentRepository = CommentRepository.getInstance();
 
     Comment addedComment = Comment.builder()
             .boardId(boardId)
             .comment(comment)
             .build();
 
-    commentService.addComment(addedComment);
+    commentRepository.insertComment(addedComment);
 
     response.sendRedirect("board.jsp?boardId=" + boardId + "&startDate=" + startDate + "&endDate=" + endDate + "&categoryId=" + categoryId + "&searchText=" + searchText + "&pageNum=" + pageNum);
 %>

@@ -2,18 +2,18 @@
 <%@ page import="org.apache.commons.fileupload.FileItem" %>
 <%@ page import="org.apache.commons.fileupload.servlet.ServletFileUpload" %>
 <%@ page import="java.util.List" %>
-<%@ page import="com.study.service.BoardService" %>
-<%@ page import="com.study.service.FileService" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="com.study.dto.Board" %>
 <%@ page import="java.util.UUID" %>
 <%@ page import="org.apache.commons.io.FilenameUtils" %>
 <%@ page import="com.study.dto.File" %>
 <%@ page import="com.study.validate.BoardValidator" %>
+<%@ page import="com.study.repository.BoardRepository" %>
+<%@ page import="com.study.repository.FileRepository" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%
-    BoardService boardService = new BoardService();
-    FileService fileService = new FileService();
+    BoardRepository boardRepository = BoardRepository.getInstance();
+    FileRepository fileRepository = FileRepository.getInstance();
     int boardId = Integer.parseInt(request.getParameter("boardId"));
 
     boolean isMultipart = ServletFileUpload.isMultipartContent(request);
@@ -82,7 +82,7 @@
             }
         }
     }
-    if(!boardService.findBoardByPasswordAndId(boardId, password)){
+    if (boardRepository.selectBoardByPassword(boardId, password) != 1) {
         response.sendRedirect("error.jsp");
     }
 
@@ -93,21 +93,20 @@
             .content(content)
             .build();
 
-    if(!BoardValidator.validateBoardForEdit(board)){
+    if (!BoardValidator.validateBoardForEdit(board)) {
         response.sendRedirect("error.jsp");
     }
 
-    boardService.editBoard(board);
+    boardRepository.updateBoard(board);
 
     for (int fileId : deleteFileIdList) {
-        fileService.deleteById(fileId);
+        fileRepository.deleteById(fileId);
     }
 
     for (File file : newFileList) {
         file.setBoardId(boardId);
+        fileRepository.insertFile(file);
     }
-
-    fileService.addFileList(newFileList);
 
     response.sendRedirect("list.jsp");
 %>

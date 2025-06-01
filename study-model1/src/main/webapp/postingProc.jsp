@@ -9,11 +9,11 @@
 <%@ page import="com.study.dto.File" %>
 <%@ page import="java.util.UUID" %>
 <%@ page import="org.apache.commons.io.FilenameUtils" %>
-<%@ page import="com.study.service.BoardService" %>
-<%@ page import="com.study.service.FileService" %>
+<%@ page import="com.study.repository.BoardRepository" %>
+<%@ page import="com.study.repository.FileRepository" %>
 <%
-    BoardService boardService = new BoardService();
-    FileService fileService = new FileService();
+    BoardRepository boardRepository = BoardRepository.getInstance();
+    FileRepository fileRepository = FileRepository.getInstance();
 
     boolean isMultipart = ServletFileUpload.isMultipartContent(request);
 
@@ -92,13 +92,16 @@
             .content(content)
             .build();
 
-    if(!BoardValidator.validateBoardForPost(board)){
+    if (!BoardValidator.validateBoardForPost(board)) {
         response.sendRedirect("error.jsp");
     }
 
-    int boardId = boardService.addBoard(board);
-    fileList.forEach(file -> file.setBoardId(boardId));
-    fileService.addFileList(fileList);
+    int boardId = boardRepository.insertBoard(board);
+    for (File file : fileList) {
+        file.setBoardId(boardId);
+        fileRepository.insertFile(file);
+    }
+
 
     response.sendRedirect("list.jsp");
 %>

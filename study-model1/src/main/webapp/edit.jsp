@@ -1,8 +1,8 @@
 <%@ page import="com.study.dto.Board" %>
-<%@ page import="com.study.service.BoardService" %>
-<%@ page import="com.study.service.FileService" %>
 <%@ page import="java.util.List" %>
 <%@ page import="com.study.dto.File" %>
+<%@ page import="com.study.repository.BoardRepository" %>
+<%@ page import="com.study.repository.FileRepository" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%
     int boardId = Integer.parseInt(request.getParameter("boardId"));
@@ -12,13 +12,11 @@
     String categoryId = request.getParameter("categoryId");
     String searchText = request.getParameter("searchText");
 
-    BoardService boardService = new BoardService();
-    Board board = boardService.getBoard(boardId);
+    BoardRepository boardRepository = BoardRepository.getInstance();
+    Board board = boardRepository.selectBoardById(boardId);
 
-    FileService fileService = new FileService();
-    List<File> fileList = fileService.getFileListByBoardId(boardId);
-
-
+    FileRepository fileRepository = FileRepository.getInstance();
+    List<File> fileList = fileRepository.selectFileListByBoardId(boardId);
 %>
 <html>
 <head>

@@ -1,14 +1,14 @@
-<%@ page import="com.study.service.FileService" %>
 <%@ page import="com.study.dto.File" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.io.FileInputStream" %>
 <%@ page import="java.io.OutputStream" %>
 <%@ page import="java.net.URLEncoder" %>
+<%@ page import="com.study.repository.FileRepository" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%
     int fileId = Integer.parseInt(request.getParameter("fileId"));
-    FileService fileService = new FileService();
-    File file = fileService.getFileById(fileId);
+    FileRepository fileRepository = FileRepository.getInstance();
+    File file = fileRepository.selectFileById(fileId);
 
     String physicalName = file.getPhysicalName() + "." + file.getExtension();
 
