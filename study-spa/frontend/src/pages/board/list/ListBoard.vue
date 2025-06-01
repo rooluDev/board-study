@@ -88,12 +88,15 @@ export default {
 
     // 페이지네이션
     const numOfPages = computed(() => {
+      if (!boardCount.value) {
+        return 1;
+      }
       return Math.ceil(boardCount.value / searchCondition.value.pageSize);
     });
 
     onMounted(async () => {
       await getBoardList(searchCondition.value.pageNum);
-      await getCategories();
+      await getCategoryList();
     });
 
     /**
@@ -110,7 +113,7 @@ export default {
     /**
      * 검색창에 사용 될 CategoryList 가져오기
      */
-    const getCategories = async () => {
+    const getCategoryList = async () => {
       categoryList.value = await fetchGetCategoryList();
     };
 
