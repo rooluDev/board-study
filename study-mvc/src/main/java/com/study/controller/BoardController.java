@@ -140,7 +140,7 @@ public class BoardController {
      * @return list
      */
     @PostMapping(value = {"/board/post"})
-    public String postBoard(@ModelAttribute BoardDTO board, @RequestParam(name = "file") List<MultipartFile> fileList) {
+    public String postBoard(@ModelAttribute BoardDTO board, @RequestParam(name = "file",required = false) List<MultipartFile> fileList) throws IOException {
         // 유효성 검사
         if (!BoardValidator.validateBoardForPost(board)) {
             return "redirect:/error";
@@ -151,10 +151,8 @@ public class BoardController {
         Long boardId = boardService.postBoard(board);
 
         // file 저장
-        try {
-            fileService.uploadFile(fileList, boardId);
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (fileList != null && !fileList.isEmpty()) {
+            fileService.uploadFile(fileList, board.getBoardId());
         }
 
         return "redirect:/board/list";
