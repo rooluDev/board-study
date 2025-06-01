@@ -2,10 +2,9 @@ package com.study.service;
 
 import com.study.dto.FileDto;
 import com.study.mapper.FileMapper;
-import com.study.repository.LocalSaveFileRepository;
 import com.study.repository.SaveFileRepository;
 import com.study.utils.MultipartFileUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,17 +17,12 @@ import java.util.UUID;
  * 파일 관련 비지니스 로직
  */
 @Service
+@RequiredArgsConstructor
 public class FileService {
     @Value("#{file['file.path']}")
     private String path;
     private final FileMapper fileMapper;
     private final SaveFileRepository saveFileRepository;
-
-    @Autowired
-    public FileService(FileMapper fileMapper, LocalSaveFileRepository localSaveFileRepository) {
-        this.fileMapper = fileMapper;
-        this.saveFileRepository = localSaveFileRepository;
-    }
 
 
     /**
@@ -53,8 +47,8 @@ public class FileService {
     /**
      * File Upload
      *
-     * @param multipartFiles
-     * @param boardId
+     * @param multipartFiles 추가할 파일
+     * @param boardId 게시판 pk
      */
     public void addFile(List<MultipartFile> multipartFiles, Long boardId) throws IOException {
         if(multipartFiles != null) {
@@ -79,6 +73,7 @@ public class FileService {
             }
         }
     }
+
     /**
      * 게시물에 저장된 파일들 삭제
      *
