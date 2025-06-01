@@ -113,7 +113,6 @@ export default {
     const addFile = (event, index) => {
       const file = event.target.files[0];
       boardFormData.value.fileList[index] = file;
-      console.log(boardFormData.value.fileList);
     };
 
     /**
@@ -124,6 +123,7 @@ export default {
       // 비밀번호 확인
       if (!checkPasswordRegex() || !checkPasswordEqual()) {
         alert('password incorrect');
+        return;
       }
 
       const formData = new FormData();
