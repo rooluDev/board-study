@@ -7,10 +7,11 @@ public class MultipartFileUtils {
 
     /**
      * 이름에서 확장자 추출
-     * @param originalFileName
-     * @return
+     *
+     * @param originalFileName file full name
+     * @return extension
      */
-    public static String extractExtension(String originalFileName){
+    public static String extractExtension(String originalFileName) {
         if (originalFileName != null) {
             int lastDotIndex = originalFileName.lastIndexOf('.');
             if (lastDotIndex > 0) {
