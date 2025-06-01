@@ -9,7 +9,6 @@ import com.study.validate.BoardValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -125,7 +124,7 @@ public class BoardController {
     public ResponseEntity updateBoard(@PathVariable(name = "boardId") Long boardId,
                                       @ModelAttribute BoardDto boardDto,
                                       @RequestPart(name = "file", required = false) List<MultipartFile> fileList,
-                                      @RequestPart(name = "deleteFileIdList", required = false) List<Long> deleteFileIdList) {
+                                      @RequestPart(name = "deleteFileIdList", required = false) List<Long> deleteFileIdList) throws IOException {
 
         if (!BoardValidator.validateBoardForEdit(boardDto)) {
             throw new IllegalStateException();
@@ -138,11 +137,7 @@ public class BoardController {
         }
 
         if (fileList != null && !fileList.isEmpty()) {
-            try {
-                fileService.addFile(fileList, boardId);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            fileService.addFile(fileList, boardId);
         }
 
         return ResponseEntity.ok().body(null);
@@ -185,11 +180,11 @@ public class BoardController {
      * @return ResponseEntity
      */
     @PostMapping(value = {"/board/password-check"})
-    public ResponseEntity checkPassword(@RequestParam(name = "boardId") Long boardId, @RequestParam(name = "enteredPassword") String enteredPassword){
+    public ResponseEntity checkPassword(@RequestParam(name = "boardId") Long boardId, @RequestParam(name = "enteredPassword") String enteredPassword) throws IllegalAccessException {
 
         // 비밀번호 불일치
         if (!boardService.findByIdAndPassword(boardId, enteredPassword)) {
-            throw new BadCredentialsException("비밀번호가 일치하지 않음");
+            throw new IllegalAccessException("비밀번호가 일치하지 않음");
         }
 
         //비밀번호 일치
