@@ -1,17 +1,23 @@
 # 📋 Medel 2
 
 ## 📝 프로젝트 개요
-이 프로젝트는 게시판을 Modle2구조(JSP와 Servlet)를 활용해 구축하는 것을 목표로 합니다.
-
-게시판의 주 기능인 글 작성, 수정, 삭제 등 을 구현했습니다.
+이 프로젝트는 **Model2 (JSP & Servlet)** 구조를 활용해 게시판을 구현한 학습용 프로젝트입니다.  
+**Front Controller + Command + Factory 패턴**을 적용하여, 요청 처리 로직을 모듈화하고  
+유지보수성과 확장성을 높이는 것을 목표로 했습니다.  
+게시판의 기본 기능(글 작성, 수정, 삭제, 검색, 파일 업로드)을 구현했습니다.
 
 ## 💡 주요 기능
-+ 게시판 작성
+
+### 1️⃣ 게시판 작성
+
+사용자가 제목, 내용, 파일을 업로드하여 게시글을 작성할 수 있는 기능입니다.  
+파일은 UUID 기반으로 서버에 저장되며, 메타데이터가 DB에 기록됩니다.
+
   <details>
    <summary>코드 보기(펼치기/접기)</summary>
   
-    AddProcCommand
-     ```
+      AddProcCommand
+      ```
       public void execute(HttpServletRequest request, HttpServletResponse response) throws Exception {
         boolean isMultipart = ServletFileUpload.isMultipartContent(request);
         if (!isMultipart) {
@@ -109,15 +115,19 @@
         response.sendRedirect("/board?command=list");
     }
     
-     ```
-     
+      ```
+  </details>
   
-+ 게시판 수정
+### 2️⃣ 게시판 수정
+
+작성자가 비밀번호를 입력해 본인 글을 수정할 수 있는 기능입니다.
+첨부 파일을 개별 삭제하거나 새 파일을 추가할 수 있으며, 수정된 내용은 DB에 반영됩니다.
+
   <details>
    <summary>코드 보기(펼치기/접기)</summary>
   
     edit.jsp
-     ```
+    ```
     public void execute(HttpServletRequest request, HttpServletResponse response) throws Exception {
         int boardId = Integer.parseInt(request.getParameter("boardId"));
 
@@ -222,15 +232,18 @@
 
         response.sendRedirect("list.jsp");
     }  
-     ```
-     
-  
-+ 게시판 삭제
+    ```
+  </details>
+
+### 3️⃣ 게시판 삭제
+
+게시글과 연관된 댓글 및 첨부 파일을 함께 삭제하는 기능입니다.
+비밀번호 검증 후 모든 관련 데이터를 안전하게 제거합니다.
   <details>
    <summary>코드 보기(펼치기/접기)</summary>
   
     DeleteCommand
-     ```
+    ```
      public void execute(HttpServletRequest request, HttpServletResponse response) throws Exception {
         int boardId = Integer.parseInt(request.getParameter("boardId"));
 
@@ -244,15 +257,18 @@
 
         response.sendRedirect("/board?command=list");
     }
-     ```
-     
+    ```
+  </details>
   
-+ 게시판 검색
+### 4️⃣ 게시판 검색
+
+게시글 목록을 날짜, 카테고리, 검색어로 필터링할 수 있으며, 페이지네이션을 지원합니다.
+
   <details>
    <summary>코드 보기(펼치기/접기)</summary>
   
     ListCommand
-     ```
+    ```
      public void execute(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String path = "/WEB-INF/views/list.jsp";
 
@@ -282,15 +298,20 @@
 
         request.getRequestDispatcher(path).forward(request, response);
     }
-     ```
-+ Command, Factory Pattern
+  ```
+
+  </details>
+
+### 5️⃣ Command, Factory Pattern
+
+Front Controller가 요청 파라미터(command)를 읽어 해당하는 Command 객체를 Factory를 통해 생성합니다.
+이를 통해 요청 처리 로직을 Command 단위로 분리하여 유연한 구조와 확장성을 확보했습니다.
+
   <details>
    <summary>코드 보기(펼치기/접기)</summary>
 
-  요청 URL의 쿼리스트링 파라미터(command) 값을 기반으로 FrontController에서 요청의 종류를 식별하고, 해당 요청에 대응하는 Command 객체를 Factory 패턴을 통해 생성합니다. 이를 통해 요청 처리 로직을 각각의 Command 클래스로 모듈화하고, 컨트롤러의 역할은 단순히 명령 분기 및 실행으로 축소하여 유지보수성과 확장성을 높였습니다. 대표적인 Command 패턴 + Factory 패턴 조합으로, 다형성을 활용한 유연한 요청 처리 구조를 구현한 사례입니다.
-
     Controller
-     ```
+    ```
     /**
      * GET 요청 Controller
      *
@@ -333,7 +354,7 @@
             e.printStackTrace();
         }
     }
-     ```
+  ```
   Command Facotry
   ```
     /**
@@ -371,6 +392,7 @@
         }
     }
   ```
+</details>
 
 ## 🛠 기술 스택
 ![Java](https://img.shields.io/badge/Java-E76F00?style=for-the-badge&logo=java&logoColor=white)
