@@ -1,20 +1,23 @@
 # 📋 SPA (Single Page Application)
 
 ## 📝 프로젝트 개요
-이 프로젝트는 게시판을 SPA(Spring Boot & Vue.js)를 활용해 구축하는 것을 목표로 합니다.
-
-게시판의 주 기능인 글 작성, 수정, 삭제 등 을 구현했습니다.
+이 프로젝트는 **Spring Boot (백엔드)**와 **Vue.js (프론트엔드)**를 활용하여 SPA 아키텍처 기반의 게시판을 구현한 학습용 프로젝트입니다.  
+게시판의 주요 기능인 **글 작성, 수정, 삭제, 검색, 예외 처리, 검색조건 유지**를 구현하며,  
+REST API를 활용한 클라이언트-서버 간 데이터 통신 및 상태 관리 방식을 학습하는 것을 목표로 했습니다.
 
 ## 💡 주요 기능
-+ 게시판 작성
+
+### 1️⃣ 게시판 작성
+
+텍스트 입력과 파일 첨부가 모두 가능한 게시판 작성 기능을 구현했습니다.  
+`multipart/form-data` 형식을 사용하여 게시글과 파일을 동시에 서버에 전송하고,  
+서버는 이를 파싱해 **DB 저장 + 파일 업로드**를 처리합니다.
+  
   <details>
    <summary>코드 보기(펼치기/접기)</summary>
 
-    텍스트 입력과 파일 첨부가 모두 가능한 게시판 작성 기능을 구현하였습니다.이를 위해 multipart/form-data 형식을 사용하여 클라이언트에서 전송된 게시글 정보(제목, 내용, 작성자 등)와 첨부파일을 함께 서버로 전달하고,서버에서는 이를 파싱하여 각각 DB에 저장하거나 파일로 저장하는 로직을 구성하였습니다.
-
     Controller
   
-    ```
     /**
      * 게시물 추가
      *
@@ -42,11 +45,10 @@
 
         return ResponseEntity.ok().body(null);
     }
-    ```
 
     FileService.addFile()
     
-    ```
+    
     /**
      * File Upload
      *
@@ -76,15 +78,18 @@
             }
         }
     }
-    ```
+  </details>
 
-+ 게시판 수정
+### 2️⃣ 게시판 수정
+  
+RESTful 규칙에 맞게 PUT 요청을 활용하여 게시글 수정 기능을 구현했습니다.
+파일 추가 및 기존 파일 삭제를 동시에 처리할 수 있으며, 데이터는 트랜잭션 단위로 업데이트됩니다.
+
   <details>
    <summary>코드 보기(펼치기/접기)</summary>
 
     Controller
   
-     ```
     /**
      * 게시물 수정
      *
@@ -116,14 +121,19 @@
 
         return ResponseEntity.ok().body(null);
     }
-     ```
-+ 게시판 삭제
+  </details>
+
+  
+### 3️⃣ 게시판 삭제
+
+댓글, 첨부파일, 게시글을 한 번에 삭제하는 기능입니다.
+REST API의 DELETE 요청을 사용하여 클라이언트에서 간결하게 호출할 수 있도록 구현했습니다.
+
   <details>
    <summary>코드 보기(펼치기/접기)</summary>
     
     Controller
   
-     ```
     /**
      * 게시물 삭제
      *
@@ -138,18 +148,19 @@
 
         return ResponseEntity.ok().body(null);
     }
-     ```
+
+  </details>
     
-+ 게시판 검색
+### 4️⃣ 게시판 검색
+
+검색 조건을 객체(SearchCondition)로 관리하여 날짜, 카테고리, 검색어, 페이징 처리를 효율적으로 수행할 수 있도록 구현했습니다.
+기본 생성자에서 기본값을 설정하여, 사용자가 검색 조건을 입력하지 않아도 자동으로 적용됩니다.
+
   <details>
    <summary>코드 보기(펼치기/접기)</summary>
-    
-    검색 조건을 SearchCondition 클래스를 별도로 두고, 기본 생성자에서 기본값을 설정하여 사용자의 입력이 없더라도 기본 검색 조건이 자동 적용되도록 구성하였습니다. 또한 getStartDateTimestamp(), getEndDateTimestamp(), getStartRow() 메서드들을 커스터마이징하여, 컨트롤러나 서비스 레이어에서 불필요한 계산 로직 없이 직관적으로 사용할 수 있게 하여 코드의 간결성과 재사용성을 높였습니다.
-
 
     Controller
   
-     ```
     /**
      * 게시판 리스트 페이지에 필요한 데이터
      *
@@ -171,11 +182,9 @@
 
         return ResponseEntity.ok().body(response);
     }
-    ```
 
-     
     SearchCondition
-    ```
+    
     /**
      * 검색 조건
      */
@@ -228,17 +237,19 @@
         }
     
     }
-    ```  
+  </details>  
 
-+ 예외처리
+### 5️⃣ 예외처리
+
+애플리케이션 전반에서 발생할 수 있는 예외를 일관되게 처리하기 위해
+@RestControllerAdvice를 활용한 전역 예외 처리 로직을 구현했습니다.
+
   <details>
    <summary>코드 보기(펼치기/접기)</summary>
-
-    애플리케이션 전반에서 발생할 수 있는 예외를 일관되게 처리하기 위해, @RestControllerAdvice를 활용한 GlobalExceptionHandler를 구현하였습니다.
   
     GlobalExceptionHandler
   
-     ```
+     
     /**
      * RestController에서 발생하는 Exception 처리하는 GlobalExceptionHandler
      */
@@ -259,14 +270,20 @@
 
      ...
 
-     ```
-+ 검색조건 유지
+  </details>
+
+  
+### 6️⃣ 검색조건 유지
+
+게시글 작성/조회 후 목록 페이지로 돌아가도 이전 검색 조건을 유지할 수 있도록
+Vue Router의 query 기능을 활용해 UX를 개선했습니다.
+
   <details>
    <summary>코드 보기(펼치기/접기)</summary>
 
     ListBoard.vue
   
-     ```
+     
     // 검색 조건
     const searchCondition = ref({
       startDate:
@@ -315,11 +332,11 @@
       });
     };
 
-     ```
+     
 
   ViewBoard.vue
 
-    ```
+    
     const goToList = () => {
       router.push({
         name: 'List',
@@ -336,7 +353,7 @@
         query: route.query,
       });
     };
-    ```
+</details>
 
 
 ## 🛠 기술 스택
