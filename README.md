@@ -33,37 +33,37 @@
 
 ### 🏠 메인 페이지 및 검색
 
-https://github.com/user-attachments/assets/a3e20e4d-d3d4-452d-ac62-ab47b17d5251
-
----
-
-### 💬 보기 페이지 및 댓글 추가
-
-https://github.com/user-attachments/assets/ed1907e8-3b66-46da-9865-efb18620c5fc
-
----
-
-### 📂 첨부파일 저장
-
-https://github.com/user-attachments/assets/240b6e45-b6bf-44d3-995c-216609e5a940
-
----
-
-### ✏️ 수정 페이지 및 수정
-
-https://github.com/user-attachments/assets/c6d418a4-2355-4dc7-8483-efd00b9b1b42
-
----
-
-### 🗑️ 보기 페이지 및 삭제
-
-https://github.com/user-attachments/assets/6b281b69-761d-45be-83c1-16f13daa79bd
+https://github.com/user-attachments/assets/6526c227-8e6d-41f9-900c-cbe31d9d3287
 
 ---
 
 ### ➕ 추가 페이지 및 추가
 
-https://github.com/user-attachments/assets/130eafd6-4867-4e6d-8012-2ad379883429
+https://github.com/user-attachments/assets/3491c2a1-60ff-474a-aaab-2e5f53b4283d
+
+---
+
+### 💬 보기 페이지 및 댓글 추가
+
+https://github.com/user-attachments/assets/c683a45f-80ae-43ca-aaf8-c7888b477846
+
+---
+
+### 📂 첨부파일 저장
+
+https://github.com/user-attachments/assets/123733f9-b305-4751-8c94-865646290ad1
+
+---
+
+### ✏️ 수정 페이지 및 수정
+
+https://github.com/user-attachments/assets/e3e8b384-9e49-4bc5-b93c-b03284c524ab
+
+---
+
+### 🗑️ 보기 페이지 및 삭제
+
+https://github.com/user-attachments/assets/4a09f6c4-36c4-47c5-9de0-17b64d89744e
 
 ---
 
