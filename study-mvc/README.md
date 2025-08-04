@@ -1,85 +1,94 @@
 # 📋 MVC
 
 ## 📝 프로젝트 개요
-이 프로젝트는 게시판을 MVC 아키텍처(Spring Boot & Thymeleaf)를 활용해 구축하는 것을 목표로 합니다.
 
-게시판의 주 기능인 글 작성, 수정, 삭제 등 을 구현했습니다.
+이 프로젝트는 **Spring Boot & Thymeleaf 기반 MVC 아키텍처**를 활용해 게시판을 구현한 학습용 프로젝트입니다.  
+게시판의 주요 기능인 **글 작성, 수정, 삭제, 검색, 비밀번호 검증, 파일 업로드** 등을 구현하며,  
+Spring MVC 패턴을 활용한 계층형 아키텍처 설계와 서버-뷰 간 데이터 바인딩을 학습하는 것을 목표로 했습니다.
 
 ## 💡 주요 기능
-+ 게시판 작성
+
+### 1️⃣ 게시판 작성
+
+텍스트 입력과 파일 첨부가 모두 가능한 게시판 작성 기능을 구현했습니다. `multipart/form-data` 형식을 사용하여 게시글 정보와 첨부 파일을 동시에 전송하고,  
+서버에서 이를 파싱해 **DB 저장 + 로컬 파일 저장** 로직을 구성했습니다.
+
   <details>
-   <summary>코드 보기(펼치기/접기)</summary>
-  
-    텍스트 입력과 파일 첨부가 모두 가능한 게시판 작성 기능을 구현하였습니다.이를 위해 multipart/form-data 형식을 사용하여 클라이언트에서 전송된 게시글 정보(제목, 내용, 작성자 등)와 첨부파일을 함께 서버로 전달하고,서버에서는 이를 파싱하여 각각 DB에 저장하거나 파일로 저장하는 로직을 구성하였습니다.
+   <summary>코드 보기(펼치기/접기)</summary>  
   
     Controller
-     ```
-    /**
-     * 게시판 등록 POST
-     *
-     * @param board    등록할 게시물
-     * @param fileList 등록할 파일들
-     * @return list
-     */
-    @PostMapping(value = {"/board/post"})
-    public String postBoard(@ModelAttribute BoardDTO board, @RequestParam(name = "file",required = false) List<MultipartFile> fileList) throws IOException {
-        // 유효성 검사
-        if (!BoardValidator.validateBoardForPost(board)) {
-            return "redirect:/error";
+     
+        /**
+         * 게시판 등록 POST
+         *
+         * @param board    등록할 게시물
+         * @param fileList 등록할 파일들
+         * @return list
+         */
+        @PostMapping(value = {"/board/post"})
+        public String postBoard(@ModelAttribute BoardDTO board, @RequestParam(name = "file",required = false) List<MultipartFile> fileList) throws IOException {
+            // 유효성 검사
+            if (!BoardValidator.validateBoardForPost(board)) {
+                return "redirect:/error";
+            }
+    
+    
+            // board 저장
+            Long boardId = boardService.postBoard(board);
+    
+            // file 저장
+            if (fileList != null && !fileList.isEmpty()) {
+                fileService.uploadFile(fileList, board.getBoardId());
+            }
+    
+            return "redirect:/board/list";
         }
-
-
-        // board 저장
-        Long boardId = boardService.postBoard(board);
-
-        // file 저장
-        if (fileList != null && !fileList.isEmpty()) {
-            fileService.uploadFile(fileList, board.getBoardId());
-        }
-
-        return "redirect:/board/list";
-    }
-     ```
+     
   fileService.uplodFile
-    ```
-    /**
-     * File Upload
-     *
-     * @param fileList 저장할 파일 리스트
-     * @param boardId  board PK
-     */
-    public void uploadFile(List<MultipartFile> fileList, Long boardId) throws IOException {
-        for (MultipartFile multipartFile : fileList) {
-            if (!multipartFile.isEmpty()) {
-                // File DTO 생성
-                FileDTO file = FileDTO.builder()
-                        .boardId(boardId)
-                        .originalName(multipartFile.getOriginalFilename())
-                        .physicalName(UUID.randomUUID().toString())
-                        .filePath(REAL_PATH)
-                        .extension(MultipartFileUtils.extractExtension(multipartFile.getOriginalFilename()))
-                        .size(multipartFile.getSize())
-                        .build();
-
-                // Server 저장
-                String filePath = REAL_PATH + file.getPhysicalName() + "." + file.getExtension();
-                File uploadedFile = new File(filePath);
-                FileUtils.copyInputStreamToFile(multipartFile.getInputStream(), uploadedFile);
-
-                // File DB Add
-                fileMapper.insertFile(file);
+    
+        /**
+         * File Upload
+         *
+         * @param fileList 저장할 파일 리스트
+         * @param boardId  board PK
+         */
+        public void uploadFile(List<MultipartFile> fileList, Long boardId) throws IOException {
+            for (MultipartFile multipartFile : fileList) {
+                if (!multipartFile.isEmpty()) {
+                    // File DTO 생성
+                    FileDTO file = FileDTO.builder()
+                            .boardId(boardId)
+                            .originalName(multipartFile.getOriginalFilename())
+                            .physicalName(UUID.randomUUID().toString())
+                            .filePath(REAL_PATH)
+                            .extension(MultipartFileUtils.extractExtension(multipartFile.getOriginalFilename()))
+                            .size(multipartFile.getSize())
+                            .build();
+    
+                    // Server 저장
+                    String filePath = REAL_PATH + file.getPhysicalName() + "." + file.getExtension();
+                    File uploadedFile = new File(filePath);
+                    FileUtils.copyInputStreamToFile(multipartFile.getInputStream(), uploadedFile);
+    
+                    // File DB Add
+                    fileMapper.insertFile(file);
+                }
             }
         }
-    }
-    ```
+
      
-  
-+ 게시판 수정
+  </details>
+
+### 2️⃣ 게시판 수정
+
+  작성자가 비밀번호를 입력해 본인 글을 수정할 수 있는 기능입니다.
+새로운 파일 추가 및 기존 파일 삭제가 가능하며, 모든 변경사항은 DB에 반영됩니다.
+
   <details>
    <summary>코드 보기(펼치기/접기)</summary>
   
     Controller
-     ```
+     
     /**
      * 게시물 수정
      *
@@ -113,15 +122,18 @@
         return "redirect:/board/list";
     }
     
-     ```
-     
-  
-+ 게시판 삭제
+  </details>
+       
+### 3️⃣ 게시판 삭제
+
+게시글과 첨부 파일, 댓글을 한 번에 삭제하는 기능입니다.
+비밀번호 확인 후 모든 관련 데이터를 안전하게 제거합니다.
+
   <details>
    <summary>코드 보기(펼치기/접기)</summary>
   
     Controller
-     ```
+     
     /**
      * 게시물 삭제
      *
@@ -138,18 +150,21 @@
         return "redirect:/board/list";
     }
     
-     ```
+  </details>
      
   
-+ 게시판 검색
+### 4️⃣ 게시판 검색
+
+검색 조건을 SearchCondition 클래스에서 관리하여
+날짜, 카테고리, 검색어, 페이징 처리를 효율적으로 수행할 수 있도록 구현했습니다.
+컨트롤러와 서비스 레이어에서 불필요한 로직 반복을 줄였습니다.
+
   <details>
    <summary>코드 보기(펼치기/접기)</summary>
     
-    검색 조건을 SearchCondition 클래스를 별도로 두고, 기본 생성자에서 기본값을 설정하여 사용자의 입력이 없더라도 기본 검색 조건이 자동 적용되도록 구성하였습니다. 또한 getStartDateTimestamp(), getEndDateTimestamp(), getStartRow() 메서드들을 커스터마이징하여, 컨트롤러나 서비스 레이어에서 불필요한 계산 로직 없이 직관적으로 사용할 수 있게 하여 코드의 간결성과 재사용성을 높였습니다.
-    
     Controller
   
-     ```
+    
     /**
      * 게시판 - 목록 페이지
      *
@@ -178,9 +193,9 @@
         return "list";
     }
     
-     ```
+     
     SearchCondition
-    ```
+    
     /**
      * 검색 조건
      */
@@ -233,17 +248,20 @@
         }
     
     }
-  ```
-+ 비밀번호 확인 프로세스
+  
+  </details>
+
+### 5️⃣ 비밀번호 확인 프로세스
+
+게시글 수정 및 삭제 시 공통적으로 필요한 비밀번호 검증 로직을
+AJAX 기반 비동기 요청으로 처리해 UX를 개선하고, 하나의 엔드포인트로 로직을 재사용했습니다.
+
   <details>
    <summary>코드 보기(펼치기/접기)</summary>
 
     
-  게시글 수정 및 삭제 시 공통적으로 필요한 비밀번호 검증 로직을 하나의 Controller에서 처리하여 중복을 제거하였습니다. 프론트엔드에서는 AJAX를 통해 서버에 비밀번호를 비동기 요청으로 전송하고, 응답 결과에 따라 수정 또는 삭제 동작을 분기 처리합니다.
-  이를 통해 사용자 경험을 저해하지 않으면서도, 하나의 엔드포인트로 재사용 가능한 보안 로직을 구현하고 유지보수성을 높였습니다.
-    
   View.html
-  ```
+  
     $(document).ready(function () {
             $("#confirmPasswordBtn").click(function () {
                 const enteredPassword = $("#passwordInput").val();
@@ -269,9 +287,9 @@
             });
         });
 
-     ```
+     
     Controller
-    ```
+    
     /**
      * 비밀번호 확인
      *
@@ -290,7 +308,7 @@
         //비밀번호 일치
         return ResponseEntity.ok().build();
     }
-    ```
+  </details>
 
 ## 🛠 기술 스택
 ![Spring Boot](https://img.shields.io/badge/springboot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
